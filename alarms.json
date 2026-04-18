@@ -1,0 +1,18 @@
+[
+    {
+        "id": 1776473832,
+        "time": "12:00",
+        "type": "once",
+        "message": "",
+        "active": true,
+        "last_triggered": ""
+    },
+    {
+        "id": 1776473857,
+        "time": "00:58",
+        "type": "once",
+        "message": "",
+        "active": false,
+        "last_triggered": "2026-04-18"
+    }
+]

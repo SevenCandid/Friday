@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.env
+
+# Friday System Files
+memory.json
+*.log
+
+# AI Models (Too large for GitHub)
+vosk-model-*/
+piper/
+
+# Build & Deployment
+dist/
+build/
+*.spec
+*.exe
+
+# IDEs
+.vscode/
+.idea/
