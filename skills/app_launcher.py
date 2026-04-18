@@ -71,11 +71,10 @@ def handle(command, speak):
             return True
         app_list_str = "\n".join([f"• {app.title()}" for app in all_apps])
         speak(f"I have indexed {count} applications. Displaying them in your tactical HUD now.")
-        try:
-            import gui_manager
-            gui_manager.update_chat("System", f"--- INDEXED APPLICATIONS ({count}) ---\n{app_list_str}")
-        except:
-            pass
+        
+        # We push the long list directly to the chat without speaking it (to avoid noise)
+        import state_manager
+        state_manager.add_to_chat("Friday", f"--- INDEXED APPLICATIONS ({count}) ---\n{app_list_str}")
         return True
 
     # 3. Handle Launching

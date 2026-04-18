@@ -1,10 +1,9 @@
 import time
+import os
 import threading
 import psutil
 import observer
 import state_manager
-import memory_manager
-import os
 
 # Cooldowns to prevent annoyance (5 minutes)
 COOLDOWN = 300
@@ -30,8 +29,8 @@ def _monitor_context(speak):
             if any(tech in active_app for tech in ["visual studio", "code", "pycharm", "sublime"]):
                 if current_time - _last_triggers.get("coding", 0) > COOLDOWN:
                     speak("I see you're working on some code. Would you like me to open your project folder?")
-                    state_manager.state.pending_action = _execute_open_projects
-                    state_manager.state.pending_action_text = "coding_support"
+                    state_manager.pending_action = _execute_open_projects
+                    state_manager.pending_action_text = "coding_support"
                     _last_triggers["coding"] = current_time
 
             # 2. BROWSER CONTEXT (Heavy Load)

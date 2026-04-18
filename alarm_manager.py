@@ -133,6 +133,10 @@ def list_alarms() -> str:
         items.append(f"{f_t} ({a['type']})")
     return resp + ", ".join(items)
 
+def get_active_alarms():
+    """Returns a list of all currently active alarm objects."""
+    return [a for a in _alarms if a.get("active", False)]
+
 def disable_all_alarms() -> str:
     for a in _alarms:
         a["active"] = False

@@ -4,6 +4,7 @@ import threading
 import sys
 import sentinel
 import context_engine
+import audio_manager
 from voice import listen
 from speech import speak
 import alarm_manager
@@ -87,14 +88,25 @@ def run_assistant():
             
         # 4. Handle Wake Word Detection
         if is_wake_word(input_text):
-            handled = brain.process(input_text, friday_respond)
+            audio_manager.play_chirp() # Sound feedback
+            
+            # CLEANUP: Aggressively remove the wake word and punctuation
+            clean_command = input_text.lower()
+            for wake in ["hey friday", "hello friday", "okay friday", "friday"]:
+                if wake in clean_command:
+                    clean_command = clean_command.replace(wake, "", 1)
+            
+            # Remove leading commas or punctuation left by STT
+            clean_command = clean_command.strip(",.?! ")
+            
+            handled = brain.process(clean_command, friday_respond)
             
             if not handled:
                 wake_resp = get_response("wake")
                 friday_respond(wake_resp)
             
             conversation_active = True
-            state_manager.set_status("Listening...")
+            state_manager.status = "Listening..."
 
 if __name__ == "__main__":
     import multiprocessing
@@ -132,7 +144,9 @@ if __name__ == "__main__":
     def on_exit():
         print("\nShutting down Friday...")
 
+    import speech
     try:
-        gui_manager.start_gui(on_ready_callback=on_gui_ready, on_exit_callback=on_exit, manual_command_callback=on_manual_command)
+        # Using the new, cleaner init_gui from the FridayHUD class
+        gui_manager.init_gui(on_ready_callback=on_gui_ready, stop_callback=speech.stop_speaking, manual_command_callback=on_manual_command)
     except KeyboardInterrupt:
         on_exit()

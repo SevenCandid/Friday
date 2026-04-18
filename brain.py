@@ -11,6 +11,8 @@ INTENT_MAP = {
         "power", "energy", "mute", "audio", "sound", "lock", "screen", "dim"
     ],
     "TIME": ["time", "date", "clock", "today", "day", "calendar"],
+    "NEWS": ["news", "headline", "headlines", "update", "happening", "report", "briefing"],
+    "SEARCH": ["search", "who", "what", "where", "how", "tell", "about", "look", "google", "find", "research"],
     "GENERAL_CHAT": ["friday", "hello", "hi", "hey", "thanks", "thank", "help", "who", "what", "how", "sup", "whats up"]
 }
 
@@ -68,17 +70,17 @@ def process(command, response_callback):
     
     # --- PROACTIVE RESPONSE HANDLING ---
     import state_manager
-    if state_manager.state.pending_action:
+    if state_manager.pending_action:
         if any(w in cmd for w in ["yes", "yeah", "sure", "do it", "please", "ok"]):
-            action = state_manager.state.pending_action
-            state_manager.state.pending_action = None
-            state_manager.state.pending_action_text = None
+            action = state_manager.pending_action
+            state_manager.pending_action = None
+            state_manager.pending_action_text = None
             result = action() # Execute the stored function
             response_callback(result)
             return True
         elif any(w in cmd for w in ["no", "nope", "nah", "stop", "cancel"]):
-            state_manager.state.pending_action = None
-            state_manager.state.pending_action_text = None
+            state_manager.pending_action = None
+            state_manager.pending_action_text = None
             response_callback("Understood. I'll remain silent.")
             return True
     

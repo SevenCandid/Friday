@@ -1,0 +1,104 @@
+import threading
+import wikipedia
+from duckduckgo_search import DDGS
+from skills import news_skill
+
+# Common Acronym Mapping for Disambiguation
+KNOWLEDGE_MAP = {
+    "uenr": "University of Energy and Natural Resources",
+    "knust": "Kwame Nkrumah University of Science and Technology",
+    "ug": "University of Ghana",
+    "ucc": "University of Cape Coast",
+    "legon": "University of Ghana, Legon",
+    "gimpa": "Ghana Institute of Management and Public Administration"
+}
+
+def _academic_search(query, speak):
+    """Mode A: KNOWLEDGE (Wikipedia Only)"""
+    try:
+        # 1. Translate Acronyms
+        search_query = KNOWLEDGE_MAP.get(query.lower(), query)
+        
+        # 2. Try direct summary
+        try:
+            summary = wikipedia.summary(search_query, sentences=3)
+            page = wikipedia.page(search_query)
+            speak(f"Consulting Academic Databases for {search_query}.")
+            return f"--- ACADEMIC BRIEF ---\nSource: Wikipedia\n\n• {summary}\n\nLink: {page.url}"
+        except:
+            # 3. Fuzzy search fallback
+            search_results = wikipedia.search(search_query)
+            if search_results:
+                best_match = search_results[0]
+                summary = wikipedia.summary(best_match, sentences=3)
+                page = wikipedia.page(best_match)
+                return f"--- ACADEMIC BRIEF ---\nSource: Wikipedia (Fuzzy Match)\n\n• {summary}"
+        
+        return None
+    except:
+        return None
+
+def _web_intel_search(query, speak):
+    """Mode C: SEARCH (Web Intel / DDG Only)"""
+    try:
+        with DDGS() as ddgs:
+            results = list(ddgs.text(query, max_results=3))
+            if results:
+                body = results[0].get('body', '')
+                speak(f"Performing general web search for {query}.")
+                return f"--- WEB INTEL ---\nSource: DuckDuckGo\n\n• {body[:400]}..."
+    except:
+        return None
+
+def handle(command, speak):
+    cmd = command.lower().strip()
+    
+    # --- MODE B: NEWS ROUTING (Strict) ---
+    news_triggers = ["news", "headline", "headlines", "latest news", "update"]
+    if any(t in cmd for t in news_triggers):
+        # We explicitly return False here to let news_skill.py handle it
+        print("[Explorer] Routing to News Mode.")
+        return False
+
+    # --- MODE A: KNOWLEDGE TRIGGER ---
+    knowledge_triggers = ["who is", "what is", "history of", "tell me about"]
+    query = ""
+    is_knowledge = False
+    
+    for t in knowledge_triggers:
+        if t in cmd:
+            query = cmd.split(t, 1)[-1].strip()
+            is_knowledge = True
+            break
+
+    if is_knowledge and query:
+        def _knowledge_thread():
+            import state_manager
+            result = _academic_search(query, speak)
+            if result:
+                speak(result)
+            else:
+                speak(f"I couldn't find a verified academic entry for {query}. Should I try a general web search?")
+                # SET THE PENDING ACTION so Friday remembers the 'Yes'
+                state_manager.pending_action = lambda: _web_intel_search(query, speak)
+                state_manager.pending_action_text = f"web_search_{query}"
+        
+        threading.Thread(target=_knowledge_thread, daemon=True).start()
+        return True
+
+    # --- MODE C: SEARCH TRIGGER ---
+    if cmd.startswith("search ") or cmd.startswith("research "):
+        query = cmd.split("search ", 1)[-1] if "search" in cmd else cmd.split("research ", 1)[-1]
+        query = query.strip()
+        
+        if query:
+            def _search_thread():
+                result = _web_intel_search(query, speak)
+                if result:
+                    speak(result)
+                else:
+                    speak("I was unable to retrieve intelligence from the web.")
+            threading.Thread(target=_search_thread, daemon=True).start()
+            return True
+
+    return False

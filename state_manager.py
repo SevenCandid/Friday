@@ -1,17 +1,11 @@
 import queue
 
-# Shared state for GUI and Voice systems
-status = "Waiting..."
+# Global state variables
+status = "Idle"
 alarm_ringing = False
-is_speaking = False  # NEW: Tracks if the assistant is currently talking
-
-class StateManager:
-    def __init__(self):
-        self.status = "Idle"
-        self.alarm_ringing = False
-        self.chat_queue = queue.Queue()
-        self.pending_action = None       # Stores the function to execute on 'Yes'
-        self.pending_action_text = None  # Stores the label for the pending action
+is_speaking = False
+pending_action = None       # Stores the function to execute on 'Yes'
+pending_action_text = None  # Stores the label for the pending action
 
 # Thread-safe queue for chat messages
 # Format: {"sender": "User/Friday", "text": "..."}

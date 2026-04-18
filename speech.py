@@ -84,6 +84,25 @@ def _speech_worker():
 _worker_thread = threading.Thread(target=_speech_worker, daemon=True)
 _worker_thread.start()
 
+def stop_speaking():
+    """Instantly clears the speech queue and stops any currently playing audio."""
+    try:
+        # 1. Clear the queue
+        while not _speech_queue.empty():
+            try:
+                _speech_queue.get_nowait()
+                _speech_queue.task_done()
+            except:
+                break
+        
+        # 2. Stop the audio output
+        import winsound
+        winsound.PlaySound(None, winsound.SND_PURGE)
+        state_manager.set_speaking(False)
+        print("[Speech System] Emergency silence triggered.")
+    except Exception as e:
+        print(f"[Speech System Error] Stop failed: {e}")
+
 def speak(text):
     """Adds text to the speech queue. Thread-safe and non-blocking."""
     if not text:
