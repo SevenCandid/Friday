@@ -36,6 +36,14 @@ def build():
         '--hidden-import=PIL',
         '--hidden-import=importlib.metadata',
         '--hidden-import=winsound',
+        '--hidden-import=feedparser',
+        '--hidden-import=duckduckgo_search',
+        '--hidden-import=wikipedia',
+        '--hidden-import=requests',
+        '--hidden-import=html',
+        '--hidden-import=ai_layer',
+        '--hidden-import=ltm_core',
+        '--hidden-import=sqlite3',
         '--collect-all=webrtcvad',     # FIX: Collects webrtcvad even if metadata is missing
         '--collect-all=vosk',          # FIX: Collects Vosk DLLs and internal files
         '--collect-all=pyttsx3',       # FIX: Ensures speech engine is fully bundled

@@ -1,0 +1,18 @@
+{
+    "ai": {
+        "ollama_url": "http://localhost:11434/api/generate",
+        "model": "llama3.2:1b",
+        "temperature": 0.3
+    },
+    "voice": {
+        "piper_exe": "piper/piper.exe",
+        "model": "piper/en_US-amy-low.onnx"
+    },
+    "user": {
+        "city": "Accra"
+    },
+    "system": {
+        "cpu_warning_threshold": 85,
+        "battery_warning_threshold": 20
+    }
+}

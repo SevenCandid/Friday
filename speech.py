@@ -7,10 +7,11 @@ import queue
 import time
 import winsound
 import state_manager
+import config
 
 # Neural Voice Configuration
-PIPER_EXE = "piper/piper.exe"
-VOICE_MODEL = "piper/en_US-amy-low.onnx"
+PIPER_EXE = config.get("voice", "piper_exe")
+VOICE_MODEL = config.get("voice", "model")
 TEMP_WAV = "last_speech.wav"
 
 # ---------------------------------------------------------------

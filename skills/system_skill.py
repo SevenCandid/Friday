@@ -1,6 +1,7 @@
 import sys
 import os
 import random
+import psutil
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import system_control
@@ -22,6 +23,14 @@ def handle(command, speak):
         speak("Opening the Windows Clock app.")
         return True
         
+    # System Monitoring
+    if any(k in command for k in ["monitor", "status", "cpu", "ram", "system"]):
+        if "open" not in command and "launch" not in command:
+            cpu = psutil.cpu_percent(interval=0.5)
+            ram = psutil.virtual_memory().percent
+            speak(f"Your CPU is currently at {cpu} percent, and RAM usage is at {ram} percent.")
+            return True
+
     # Power Controls
     if "shutdown" in command or "shut down" in command or "turn off" in command:
         if system_control.shutdown_pc():

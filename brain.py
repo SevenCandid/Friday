@@ -10,7 +10,11 @@ INTENT_MAP = {
     "SYSTEM_CONTROL": [
         "shutdown", "restart", "battery", "wifi", "volume", "brightness", 
         "power", "energy", "mute", "audio", "sound", "lock", "screen", "dim",
-        "close", "kill", "terminate", "exit", "end"
+        "close", "kill", "terminate", "exit", "end", "monitor", "status", "cpu", "ram"
+    ],
+    "DESKTOP_CONTROL": [
+        "scroll", "screenshot", "capture", "type", "click", "mouse", 
+        "keyboard", "desktop", "minimize", "maximize", "window", "copy", "paste"
     ],
     "TIME": ["time", "date", "clock", "today", "day", "calendar"],
     "NEWS": ["news", "headline", "headlines", "update", "happening", "report", "briefing"],

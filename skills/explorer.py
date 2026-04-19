@@ -2,6 +2,7 @@ import threading
 import wikipedia
 from duckduckgo_search import DDGS
 from skills import news_skill
+import ai_layer
 
 # Common Acronym Mapping for Disambiguation
 KNOWLEDGE_MAP = {
@@ -21,7 +22,8 @@ def _academic_search(query, speak):
         
         # 2. Try direct summary
         try:
-            summary = wikipedia.summary(search_query, sentences=3)
+            raw_summary = wikipedia.summary(search_query, sentences=3)
+            summary = ai_layer.summarize(raw_summary)
             page = wikipedia.page(search_query)
             speak(f"Consulting Academic Databases for {search_query}.")
             return f"--- ACADEMIC BRIEF ---\nSource: Wikipedia\n\n• {summary}\n\nLink: {page.url}"
@@ -30,7 +32,8 @@ def _academic_search(query, speak):
             search_results = wikipedia.search(search_query)
             if search_results:
                 best_match = search_results[0]
-                summary = wikipedia.summary(best_match, sentences=3)
+                raw_summary = wikipedia.summary(best_match, sentences=3)
+                summary = ai_layer.summarize(raw_summary)
                 page = wikipedia.page(best_match)
                 return f"--- ACADEMIC BRIEF ---\nSource: Wikipedia (Fuzzy Match)\n\n• {summary}"
         
@@ -44,11 +47,15 @@ def _web_intel_search(query, speak):
         with DDGS() as ddgs:
             results = list(ddgs.text(query, max_results=3))
             if results:
-                body = results[0].get('body', '')
+                raw_body = results[0].get('body', '')
+                explanation = ai_layer.explain(raw_body)
                 speak(f"Performing general web search for {query}.")
-                return f"--- WEB INTEL ---\nSource: DuckDuckGo\n\n• {body[:400]}..."
-    except:
-        return None
+                return f"--- WEB INTEL ---\nSource: DuckDuckGo\n\n• {explanation}"
+            else:
+                return "I couldn't find any relevant results on the web for that query."
+    except Exception as e:
+        print(f"[Explorer Error] {e}")
+        return "I encountered an error while searching the web. The service might be temporarily unavailable."
 
 def handle(command, speak):
     cmd = command.lower().strip()

@@ -1,39 +1,40 @@
 import sys
 import os
 import random
+import threading
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import memory_manager
+import ltm_core
+import ai_layer
 from personality import get_response
 
 def handle(command, speak):
-    # Name memory
-    if "my name is" in command:
-        name = command.split("is")[-1].strip().capitalize()
-        memory_manager.set_memory("user_name", name)
-        speak("Got it, I'll remember that.")
+    # Explicit Memory Feature Check
+    if "do you have memory" in command:
+        speak("Yes, I now have a long-term memory database. Tell me to 'remember that' something, and I will recall it later.")
+        return True
+
+    # Long-Term Memory: Save Fact
+    if command.startswith("remember that ") or command.startswith("note that "):
+        def _save_memory_thread():
+            fact = ai_layer.extract_fact(command)
+            if fact:
+                ltm_core.save_fact(fact)
+                speak("Got it, I've committed that to long-term memory.")
+            else:
+                speak("I didn't quite catch what you wanted me to remember.")
+        threading.Thread(target=_save_memory_thread, daemon=True).start()
         return True
         
-    if "remember" in command and "like" in command:
-        thing = command.split("like")[-1].strip()
-        memory_manager.set_memory("likes", thing)
-        speak("Got it, I'll remember that.")
-        return True
-        
-    if "what" in command and "my name" in command:
-        name = memory_manager.get_memory("user_name")
-        if name:
-            speak(f"Your name is {name}.")
-        else:
-            speak("I don't know that yet.")
-        return True
-        
-    if "what" in command and "do i like" in command:
-        likes = memory_manager.get_memory("likes")
-        if likes:
-            speak(f"You like {likes}.")
-        else:
-            speak("I don't know that yet.")
+    # Long-Term Memory: Recall Fact
+    memory_questions = ["what is my", "what are my", "do i ", "who am i", "do you remember", "what did i tell you"]
+    if any(q in command for q in memory_questions):
+        def _recall_memory_thread():
+            facts = ltm_core.get_all_facts()
+            answer = ai_layer.answer_from_memory(command, facts)
+            speak(answer)
+        threading.Thread(target=_recall_memory_thread, daemon=True).start()
         return True
 
     # Casual Chat / Greetings

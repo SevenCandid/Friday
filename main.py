@@ -2,6 +2,11 @@ import time
 import difflib
 import threading
 import sys
+
+# Initialize the persistent file logger first
+import logger
+logger.init_logger()
+
 import sentinel
 import context_engine
 import audio_manager

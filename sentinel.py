@@ -3,6 +3,9 @@ import time
 import threading
 import observer
 import memory_manager
+from skills import morning_briefing
+import config
+
 
 # Cooldown timers to prevent spam (in seconds)
 _cooldowns = {
@@ -38,6 +41,12 @@ def greet_user(speak):
             msg += "System status is optimal. Standing by."
             
         speak(msg)
+
+        # ── AUTO MORNING BRIEFING ──────────────────────────────
+        # Fires automatically if it's 5am–11am and hasn't run today
+        if morning_briefing.should_run_briefing():
+            morning_briefing.run_briefing(speak)
+
     except Exception as e:
         print(f"[Sentinel Error] Greeting failed: {e}")
 
@@ -49,13 +58,15 @@ def _monitor_loop(speak):
             
             # 1. Check CPU Usage
             cpu = psutil.cpu_percent(interval=1)
-            if cpu > 85 and (current_time - _cooldowns["high_cpu"] > COOLDOWN_PERIOD):
-                speak("Excuse me, I noticed your CPU usage is over 85 percent. You might want to check for background apps.")
+            cpu_limit = config.get("system", "cpu_warning_threshold")
+            if cpu > cpu_limit and (current_time - _cooldowns["high_cpu"] > COOLDOWN_PERIOD):
+                speak(f"Excuse me, I noticed your CPU usage is over {cpu_limit} percent. You might want to check for background apps.")
                 _cooldowns["high_cpu"] = current_time
 
             # 2. Check Battery
             batt = psutil.sensors_battery()
-            if batt and batt.percent < 20 and not batt.power_plugged and (current_time - _cooldowns["low_battery"] > COOLDOWN_PERIOD):
+            batt_limit = config.get("system", "battery_warning_threshold")
+            if batt and batt.percent < batt_limit and not batt.power_plugged and (current_time - _cooldowns["low_battery"] > COOLDOWN_PERIOD):
                 speak(f"Warning: Your battery has dropped to {int(batt.percent)} percent. Please connect a power source.")
                 _cooldowns["low_battery"] = current_time
 

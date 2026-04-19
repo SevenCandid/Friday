@@ -36,7 +36,40 @@ def handle(command, speak):
         speak(f"Snapshot saved to your desktop as friday_screenshot.png.")
         return True
 
-    # 3. Typing Control
+    # 3. Window Control
+    if "minimize all" in command or "show desktop" in command:
+        speak("Minimizing all windows.")
+        pyautogui.hotkey('win', 'd')
+        return True
+        
+    if "minimize window" in command or "minimize this" in command:
+        speak("Minimizing active window.")
+        pyautogui.hotkey('win', 'down')
+        time.sleep(0.1)
+        pyautogui.hotkey('win', 'down')
+        return True
+        
+    if "maximize window" in command or "maximize this" in command:
+        speak("Maximizing active window.")
+        pyautogui.hotkey('win', 'up')
+        return True
+        
+    # 4. Keyboard Macros
+    if "copy that" in command or "copy this" in command:
+        pyautogui.hotkey('ctrl', 'c')
+        speak("Copied to clipboard.")
+        return True
+        
+    if "paste that" in command or "paste this" in command or "paste it" in command:
+        pyautogui.hotkey('ctrl', 'v')
+        speak("Pasted.")
+        return True
+        
+    if "press enter" in command or "hit enter" in command:
+        pyautogui.press('enter')
+        return True
+
+    # 5. Typing Control
     if command.startswith("type "):
         text_to_type = command[5:].strip()
         if not text_to_type:
