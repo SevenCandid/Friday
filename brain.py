@@ -1,6 +1,7 @@
 import difflib
 import skill_manager
 import memory_manager
+import state_manager
 
 # Intent Definitions (Clusters of related words)
 INTENT_MAP = {
@@ -8,7 +9,8 @@ INTENT_MAP = {
     "FILE_CONTROL": ["file", "folder", "document", "move", "search", "find", "locate", "path", "directory"],
     "SYSTEM_CONTROL": [
         "shutdown", "restart", "battery", "wifi", "volume", "brightness", 
-        "power", "energy", "mute", "audio", "sound", "lock", "screen", "dim"
+        "power", "energy", "mute", "audio", "sound", "lock", "screen", "dim",
+        "close", "kill", "terminate", "exit", "end"
     ],
     "TIME": ["time", "date", "clock", "today", "day", "calendar"],
     "NEWS": ["news", "headline", "headlines", "update", "happening", "report", "briefing"],
@@ -69,14 +71,16 @@ def process(command, response_callback):
     cmd = _normalize_command(command.lower().strip())
     
     # --- PROACTIVE RESPONSE HANDLING ---
-    import state_manager
     if state_manager.pending_action:
         if any(w in cmd for w in ["yes", "yeah", "sure", "do it", "please", "ok"]):
             action = state_manager.pending_action
             state_manager.pending_action = None
             state_manager.pending_action_text = None
-            result = action() # Execute the stored function
-            response_callback(result)
+            
+            # SAFETY CHECK: Only call if it's a function
+            if callable(action):
+                result = action()
+                response_callback(result)
             return True
         elif any(w in cmd for w in ["no", "nope", "nah", "stop", "cancel"]):
             state_manager.pending_action = None
@@ -89,13 +93,16 @@ def process(command, response_callback):
     
     # 3. Apply Context (Memory)
     # If confidence is low, check if the last command was the same intent
-    last_intent = memory_manager.get_last_intent()
-    if confidence < 10 and last_intent and last_intent != "GENERAL_CHAT":
-        # Boost confidence for follow-up actions in the same context
-        if any(kw in cmd for kw in ["it", "them", "search", "open", "go"]):
-            intent = last_intent
-            confidence += 15
-            print(f"[Brain] Applying Context: Boosted {intent} based on last interaction.")
+    try:
+        last_intent = memory_manager.get_last_intent()
+        if confidence < 10 and last_intent and last_intent != "GENERAL_CHAT":
+            # Boost confidence for follow-up actions in the same context
+            if any(kw in cmd for kw in ["it", "them", "search", "open", "go"]):
+                intent = last_intent
+                confidence += 15
+                print(f"[Brain] Applying Context: Boosted {intent} based on last interaction.")
+    except:
+        pass
     
     print(f"[Brain] Intent: {intent} (Confidence: {confidence})")
 

@@ -88,10 +88,21 @@ def handle(command, speak):
     if not target_app: return False
 
     # --- INTELLIGENT MATCHING ENGINE ---
-    # 1. Partial & Exact Match
-    candidates = [name for name in _app_index.keys() if target_app in name]
-    
-    # 2. Fuzzy Match (if no partial matches)
+    # Filter out installer/uninstaller/config shortcuts (never what the user wants)
+    JUNK_WORDS = ["uninstall", "setup", "remove", "configuration", "config tools", "update", "repair"]
+
+    # 1. Partial & Exact Match (against clean candidates only)
+    candidates = [
+        name for name in _app_index.keys()
+        if target_app in name and not any(junk in name for junk in JUNK_WORDS)
+    ]
+
+    # 2. Fuzzy Match fallback
+    if not candidates:
+        all_clean = [n for n in _app_index.keys() if not any(j in n for j in JUNK_WORDS)]
+        candidates = difflib.get_close_matches(target_app, all_clean, n=3, cutoff=0.5)
+
+    # Also try with junk if still nothing
     if not candidates:
         candidates = difflib.get_close_matches(target_app, _app_index.keys(), n=3, cutoff=0.5)
 
@@ -99,23 +110,24 @@ def handle(command, speak):
         speak(f"I'm sorry, I couldn't find an application named {target_app}.")
         return True
 
-    # 3. Use Memory to Rank Candidates
-    usage_data = memory_manager.get_memory("app_usage") or {}
-    candidates.sort(key=lambda x: usage_data.get(x, 0), reverse=True)
+    # 3. Exact match wins immediately — no need to ask
+    if target_app in candidates:
+        best_match = target_app
+    else:
+        # Use Memory to rank, then prefer shorter names (more specific)
+        usage_data = memory_manager.get_memory("app_usage") or {}
+        candidates.sort(key=lambda x: (-usage_data.get(x, 0), len(x)))
 
-    # 4. Handle Ambiguity
-    if len(candidates) > 1:
-        # Check if the top candidate is significantly more used than the second
-        top_usage = usage_data.get(candidates[0], 0)
-        second_usage = usage_data.get(candidates[1], 0)
-        
-        if top_usage <= second_usage: # It's a tie or close
-            options = " or ".join([c.title() for c in candidates[:2]])
-            speak(f"Did you mean {options}?")
-            return True
+        # 4. If still ambiguous after ranking, ask — but only between top 2
+        if len(candidates) > 1:
+            top_usage = usage_data.get(candidates[0], 0)
+            second_usage = usage_data.get(candidates[1], 0)
+            if top_usage <= second_usage:
+                options = " or ".join([c.title() for c in candidates[:2]])
+                speak(f"Did you mean {options}?")
+                return True
 
-    # 5. Execute Best Match
-    best_match = candidates[0]
+        best_match = candidates[0]
     try:
         os.startfile(_app_index[best_match])
         speak(f"Launching {best_match.title()}.")
