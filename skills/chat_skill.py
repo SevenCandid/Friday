@@ -79,7 +79,11 @@ def handle(command, speak):
 
     # --- AI CHAT FALLBACK ---
     # If none of the above hardcoded rules matched, use the AI to generate a response.
-    # This makes Friday much smarter and able to handle questions like "How are you doing?"
+    # Note: We skip this if the command looks like a web search, to let web_search_skill handle it.
+    search_keywords = ["price", "who is", "what is", "where is", "how many", "score", "weather", "latest"]
+    if any(kw in command for kw in search_keywords):
+        return False
+
     if ai_layer.is_available():
         def _ai_chat_thread():
             # Use context-aware processing

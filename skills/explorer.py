@@ -27,7 +27,7 @@ def _academic_search(query, speak):
             page = wikipedia.page(search_query)
             speak(f"Consulting Academic Databases for {search_query}.")
             return f"--- ACADEMIC BRIEF ---\nSource: Wikipedia\n\n• {summary}\n\nLink: {page.url}"
-        except:
+        except Exception:
             # 3. Fuzzy search fallback
             search_results = wikipedia.search(search_query)
             if search_results:
@@ -38,7 +38,7 @@ def _academic_search(query, speak):
                 return f"--- ACADEMIC BRIEF ---\nSource: Wikipedia (Fuzzy Match)\n\n• {summary}"
         
         return None
-    except:
+    except Exception:
         return None
 
 def _web_intel_search(query, speak):
@@ -72,12 +72,23 @@ def handle(command, speak):
     query = ""
     is_knowledge = False
     
-    for t in knowledge_triggers:
-        if t in cmd:
-            query = cmd.split(t, 1)[-1].strip()
-            is_knowledge = True
-            break
+    # LIVE DATA BLOCK: If user asks for price, weather, etc, skip Academic mode
+    live_keywords = ["price", "weather", "score", "stock", "market", "exchange rate", "live"]
+    if any(k in cmd for k in live_keywords):
+        is_knowledge = False
+    else:
+        for t in knowledge_triggers:
+            if t in cmd:
+                query = cmd.split(t, 1)[-1].strip()
+                is_knowledge = True
+                break
 
+    # --- MODE D: DIRECT ACRONYM MATCH ---
+    # If the user just says "UENR" or "KNUST", handle it immediately.
+    if cmd in KNOWLEDGE_MAP:
+        query = cmd
+        is_knowledge = True
+    
     if is_knowledge and query:
         def _knowledge_thread():
             import state_manager

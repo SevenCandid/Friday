@@ -52,6 +52,7 @@ def execute_command(command, response_callback):
     for skill in _skills:
         try:
             if skill.handle(cmd, response_callback):
+                print(f"[Skill Manager] Handled by: {skill.__name__}")
                 return True
         except Exception as e:
             print(f"[Skill Manager Error] In {skill.__name__}: {e}")

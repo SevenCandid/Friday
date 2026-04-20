@@ -1,15 +1,12 @@
 import threading
-from duckduckgo_search import DDGS
 import ai_layer
 import state_manager
 
 def handle(command, speak):
-    # 1. Identify Search Intent
-    # Keywords that trigger a web search
+    # 1. Identify Search Intent (Only for LIVE data)
     search_keywords = [
-        "search", "find out", "who is", "what is", "where is", 
-        "price of", "score", "how many", "tell me about", "look up",
-        "weather in", "latest", "current"
+        "search", "research", "price", "stock", "score", "how many", "look up",
+        "weather", "latest", "current", "how much", "find"
     ]
     
     is_search = any(kw in command for kw in search_keywords)
@@ -22,26 +19,49 @@ def handle(command, speak):
     if not is_search:
         return False
 
-    # 2. Extract Query
+    # 2. Extract and Clean Query
     query = command
-    for kw in search_keywords:
-        if command.startswith(kw):
-            query = command.replace(kw, "", 1).strip()
+    # Remove search triggers for the actual query
+    for kw in ["search", "research", "find out", "look up", "tell me about"]:
+        if query.startswith(kw):
+            query = query.replace(kw, "", 1).strip()
             break
     
-    if not query:
+    # Remove filler words for a cleaner search
+    filler = ["the", "a", "an", "of", "about", "is", "for", "me", "what", "who", "where"]
+    query_words = [w for w in query.replace("?", "").split() if w.lower() not in filler]
+    clean_query = " ".join(query_words)
+
+    if not clean_query:
         speak("What would you like me to search for?")
         return True
 
-    speak(f"One moment, searching the live web for {query}...")
+    speak(f"Searching for {clean_query}...")
 
     def _search_thread():
         try:
+            from duckduckgo_search import DDGS
+            results = []
+            
             with DDGS() as ddgs:
-                results = [r for r in ddgs.text(query, max_results=5)]
+                # Use a very simple search - often more reliable
+                for r in ddgs.text(clean_query, max_results=3):
+                    results.append(r)
                 
             if not results:
-                speak("I searched the web but couldn't find any clear results for that.")
+                # Try one more time with the raw query
+                with DDGS() as ddgs:
+                    for r in ddgs.text(query, max_results=3):
+                        results.append(r)
+
+            if not results:
+                # Last resort: Try news
+                with DDGS() as ddgs:
+                    for r in ddgs.news(clean_query, max_results=3):
+                        results.append(r)
+
+            if not results:
+                speak("I searched the web but couldn't find a direct answer. I might be having trouble reaching the live network.")
                 return
 
             # Format results for the AI to summarize
