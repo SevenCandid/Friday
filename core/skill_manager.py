@@ -43,18 +43,44 @@ def load_skills():
 
 def execute_command(command, response_callback):
     """
-    Passes the command to each loaded skill.
-    Stops at the first skill that returns True (Handled).
+    Passes the command to each loaded skill using a priority system.
     """
     if not command:
         return False
         
     cmd = command.lower().strip()
     
+    # HARD-CORE CLEANING: Remove the wake word if it leaked into the command
+    for wake in ["hey seven", "hello seven", "okay seven", "seven"]:
+        if cmd.startswith(wake):
+            cmd = cmd.replace(wake, "", 1).strip(",.?! ")
+            break
+    
+    # PRIORITY ORDER: Tactical skills must be checked before general AI chat
+    PRIORITY_LIST = ["explorer", "app_launcher", "app_closer", "system_control", "files", "location_skill", "weather_skill", "github_skill"]
+    
+    print(f"[Brain] Routing Command: '{cmd}'")
+    
+    # 1. Check priority skills first
+    for skill_name in PRIORITY_LIST:
+        for skill in _skills:
+            # Check both module name and filename-based name
+            if skill.__name__ == skill_name or getattr(skill, "__file__", "").endswith(skill_name + ".py"):
+                try:
+                    if skill.handle(cmd, response_callback):
+                        print(f"[Skill Manager] Handled by Priority Skill: {skill_name}")
+                        return True
+                except Exception as e:
+                    print(f"[Skill Manager Error] In Priority {skill_name}: {e}")
+    
+    # 2. Check everything else (including chat_skill fallback)
     for skill in _skills:
+        # Skip what we already checked
+        if skill.__name__ in PRIORITY_LIST: continue
+        
         try:
             if skill.handle(cmd, response_callback):
-                print(f"[Skill Manager] Handled by: {skill.__name__}")
+                print(f"[Skill Manager] Handled by Fallback: {skill.__name__}")
                 return True
         except Exception as e:
             print(f"[Skill Manager Error] In {skill.__name__}: {e}")

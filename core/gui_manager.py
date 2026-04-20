@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import scrolledtext
 import threading
 import time
+import random
 from datetime import datetime
 import psutil
 import math
@@ -10,11 +11,11 @@ import pystray
 from PIL import Image
 from .path_helper import get_resource_path
 
-class FridayHUD:
+class SevenHUD:
     """Premium Sci-Fi HUD with Neural Wave and Clean Class Logic."""
     def __init__(self, on_ready, stop_cb, manual_cb):
         self.root = tk.Tk()
-        self.root.title("SEVEN v2.0 | Neural Intelligence HUD")
+        self.root.title("SEVEN v1.0 | Neural Intelligence HUD")
         self.root.geometry("700x900")
         self.root.configure(bg="#0f0f17")
         
@@ -39,7 +40,7 @@ class FridayHUD:
             "glow": "#00e5ff",
             "text": "#e0e0e0",
             "user": "#ffffff",
-            "friday": "#00f2ff",
+            "seven": "#00f2ff",
             "stop": "#550000",
             "warn": "#f39c12"
         }
@@ -76,10 +77,31 @@ class FridayHUD:
 
         link_lbl.bind("<Button-1>", copy_link)
 
-        # 2. NEURAL WAVE VISUALIZER
-        self.canvas = tk.Canvas(self.root, height=70, bg=self.colors["bg"], highlightthickness=0)
-        self.canvas.pack(fill="x", pady=10)
-        self._animate_wave(0)
+        # 2. DUAL NEURAL WAVE VISUALIZER
+        wave_panel = tk.Frame(self.root, bg=self.colors["bg"])
+        wave_panel.pack(fill="x", padx=15, pady=(10, 5))
+
+        # --- Listening Wave (User Voice) ---
+        listen_frame = tk.Frame(wave_panel, bg="#0d1117", highlightbackground="#00ff88", highlightthickness=1)
+        listen_frame.pack(fill="x", pady=(0, 4))
+        tk.Label(listen_frame, text="🎙️ LISTENING", font=("Consolas", 8, "bold"),
+                 bg="#0d1117", fg="#00ff88").pack(anchor="w", padx=8, pady=(4, 0))
+        self.listen_canvas = tk.Canvas(listen_frame, height=50, bg="#0d1117", highlightthickness=0)
+        self.listen_canvas.pack(fill="x", padx=4, pady=(0, 4))
+
+        # --- Talking Wave (SEVEN Voice) ---
+        talk_frame = tk.Frame(wave_panel, bg="#0d1117", highlightbackground="#00d2ff", highlightthickness=1)
+        talk_frame.pack(fill="x", pady=(4, 0))
+        tk.Label(talk_frame, text="🔊 SEVEN", font=("Consolas", 8, "bold"),
+                 bg="#0d1117", fg="#00d2ff").pack(anchor="w", padx=8, pady=(4, 0))
+        self.talk_canvas = tk.Canvas(talk_frame, height=50, bg="#0d1117", highlightthickness=0)
+        self.talk_canvas.pack(fill="x", padx=4, pady=(0, 4))
+
+        # State for wave animation
+        self._wave_phase = 0.0
+        self._talk_intensity = 0.0
+        self._talk_bars = [0.0] * 40
+        self._animate_dual_wave()
 
         # 3. Tactical Sensor Grid
         sensor_frame = tk.Frame(self.root, bg=self.colors["bg"], pady=10)
@@ -111,8 +133,8 @@ class FridayHUD:
         
         self.chat.tag_config("meta", foreground="#777777", font=("Consolas", 10))
         self.chat.tag_config("user", foreground=self.colors["user"], spacing1=4)
-        self.chat.tag_config("friday", foreground=self.colors["friday"], spacing1=4)
-        self.chat.tag_bind("friday", "<Button-1>", lambda e: None) # Placeholder for Seven
+        self.chat.tag_config("seven", foreground=self.colors["seven"], spacing1=4)
+        self.chat.tag_bind("seven", "<Button-1>", lambda e: None)
 
         # 5. Tactical Input Console
         input_frame = tk.Frame(self.root, bg=self.colors["bg"], pady=20, padx=20)
@@ -197,34 +219,85 @@ class FridayHUD:
     def _add_message(self, sender, text):
         self.chat.config(state="normal")
         time_str = datetime.now().strftime("%H:%M")
-        tag = "user" if sender == "User" else "friday"
-        sender_name = "SEVEN" if sender == "Friday" else sender
+        tag = "user" if sender == "User" else "seven"
+        sender_name = sender
         
         self.chat.insert("end", f"--- {sender_name} @ {time_str} ---\n", "meta")
         self.chat.insert("end", f"{text}\n\n", tag)
         self.chat.see("end")
         self.chat.config(state="disabled")
 
-    def _animate_wave(self, phase):
-        self.canvas.delete("all")
-        width = 700
-        mid_y = 35
-        reactivity = 1.0 + (state_manager.audio_energy * 2.5)
-        points_main = []
-        points_bg = []
-        
-        for x in range(0, width, 5):
-            y1 = mid_y + (math.sin(x * 0.02 + phase) * 18 + math.sin(x * 0.06 + phase * 1.2) * 8) * reactivity
-            points_main.extend([x, y1])
-            y2 = mid_y + (math.sin(x * 0.015 - phase) * 12 + math.sin(x * 0.04 - phase * 0.8) * 10) * reactivity
-            points_bg.extend([x, y2])
-            
-        self.canvas.create_line(points_bg, fill="#005577", smooth=True, width=1.5)
-        self.canvas.create_line(points_main, fill=self.colors["accent"], smooth=True, width=3)
-        self.canvas.create_line(points_main, fill=self.colors["accent"], smooth=True, width=3)
-        self.canvas.create_line(points_main, fill=self.colors["accent"], smooth=True, width=3)
-        
-        self.root.after(40, lambda: self._animate_wave(phase + 0.1))
+    def _animate_dual_wave(self):
+        """Renders both the Listening and Talking waves at ~25fps."""
+        self._wave_phase += 0.08
+        phase = self._wave_phase
+
+        # ─── LISTENING WAVE (reactive to mic energy) ───
+        self.listen_canvas.delete("all")
+        lw = self.listen_canvas.winfo_width() or 660
+        lh = 50
+        mid_y = lh / 2
+        energy = min(state_manager.audio_energy, 1.5)
+        reactivity = 0.3 + (energy * 3.0)
+
+        # Background glow wave
+        pts_bg = []
+        for x in range(0, lw, 4):
+            y = mid_y + (math.sin(x * 0.015 - phase * 0.7) * 8 + math.sin(x * 0.04 - phase) * 5) * reactivity
+            pts_bg.extend([x, y])
+        if len(pts_bg) >= 4:
+            self.listen_canvas.create_line(pts_bg, fill="#004d33", smooth=True, width=1)
+
+        # Main voice wave
+        pts_main = []
+        for x in range(0, lw, 4):
+            y = mid_y + (math.sin(x * 0.025 + phase) * 12 + math.sin(x * 0.07 + phase * 1.3) * 6) * reactivity
+            pts_main.extend([x, y])
+        if len(pts_main) >= 4:
+            self.listen_canvas.create_line(pts_main, fill="#00ff88", smooth=True, width=2)
+
+        # Energy indicator bar
+        bar_w = int(lw * min(energy, 1.0))
+        if bar_w > 0:
+            self.listen_canvas.create_rectangle(0, lh - 3, bar_w, lh, fill="#00ff88", outline="")
+
+        # ─── TALKING WAVE (neural pulse bars) ───
+        self.talk_canvas.delete("all")
+        tw = self.talk_canvas.winfo_width() or 660
+        th = 50
+        is_talking = state_manager.is_speaking
+        num_bars = len(self._talk_bars)
+        bar_width = max(tw // num_bars, 2)
+        gap = 2
+
+        # Animate bar heights
+        for i in range(num_bars):
+            if is_talking:
+                # Generate lively, semi-random bar heights when speaking
+                target = 0.3 + 0.7 * abs(math.sin(phase * 2.5 + i * 0.8)) * random.uniform(0.5, 1.0)
+                self._talk_bars[i] += (target - self._talk_bars[i]) * 0.35
+            else:
+                # Decay to a gentle idle pulse
+                idle = 0.08 + 0.05 * abs(math.sin(phase * 0.5 + i * 0.3))
+                self._talk_bars[i] += (idle - self._talk_bars[i]) * 0.15
+
+        for i, h in enumerate(self._talk_bars):
+            x1 = i * bar_width + gap
+            x2 = x1 + bar_width - gap
+            bar_h = int(h * (th - 6))
+            y1 = (th - bar_h) // 2
+            y2 = y1 + bar_h
+
+            # Color gradient: cyan when idle, bright cyan-white when talking
+            if is_talking:
+                intensity = int(min(h * 255, 255))
+                color = f"#{intensity:02x}ff{255:02x}"
+            else:
+                color = "#1a3a4a"
+
+            self.talk_canvas.create_rectangle(x1, y1, x2, y2, fill=color, outline="")
+
+        self.root.after(40, self._animate_dual_wave)
 
     def _start_loops(self, on_ready):
         def sensor_loop():
@@ -280,4 +353,4 @@ class FridayHUD:
         self.root.mainloop()
 
 def init_gui(on_ready, stop_cb, manual_cb):
-    FridayHUD(on_ready, stop_cb, manual_cb)
+    SevenHUD(on_ready, stop_cb, manual_cb)

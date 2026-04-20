@@ -226,7 +226,7 @@ def handle(command, speak):
             gui_lines.append(f"   — {item['summary']}\n")
 
         from core import state_manager
-        state_manager.add_to_chat("Friday", "\n".join(gui_lines))
+        state_manager.add_to_chat("SEVEN", "\n".join(gui_lines))
 
         # ── Voice Delivery (natural, spoken) ───────────────────────
         voice_parts = ["Here's your intelligence briefing."]

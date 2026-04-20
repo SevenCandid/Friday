@@ -75,7 +75,7 @@ def handle(command, speak):
         speak(f"I have indexed {count} applications. Displaying them in your tactical HUD now.")
         
         # We push the long list directly to the chat without speaking it (to avoid noise)
-        state_manager.add_to_chat("Friday", f"--- INDEXED APPLICATIONS ({count}) ---\n{app_list_str}")
+        state_manager.add_to_chat("SEVEN", f"--- INDEXED APPLICATIONS ({count}) ---\n{app_list_str}")
         return True
 
     # 3. Handle Launching

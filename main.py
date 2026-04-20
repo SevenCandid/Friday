@@ -85,18 +85,22 @@ def run_assistant():
         current_timeout = 30 if conversation_active else 5
         input_text = listen(listen_timeout=current_timeout)
         
-        if input_text is None:
+        if input_text is None or not input_text.strip():
             continue
             
-        if not input_text:
-            continue
-            
+        # Clean the command (Strip wake word if present)
+        clean_command = input_text.lower().strip(",.?! ")
+        for wake in ["hey seven", "hello seven", "okay seven", "seven"]:
+            if clean_command.startswith(wake):
+                clean_command = clean_command.replace(wake, "", 1).strip(",.?! ")
+                break
+
         # --- CASE 1: ACTIVE CONVERSATION (Follow-up Mode) ---
         if conversation_active:
-            print(f"User: '{input_text}'")
-            state_manager.add_to_chat("User", input_text)
+            print(f"User: '{clean_command}'")
+            state_manager.add_to_chat("User", clean_command)
             state_manager.set_status("Processing...")
-            brain.process(input_text, speech.speak)
+            brain.process(clean_command, speech.speak)
             last_interaction_time = time.time() # Reset follow-up timer
             continue
             
@@ -104,20 +108,12 @@ def run_assistant():
         if is_wake_word(input_text):
             audio_manager.play_chirp()
             
-            # Remove the wake word and punctuation
-            clean_command = input_text.lower()
-            for wake in ["hey seven", "hello seven", "okay seven", "seven"]:
-                if wake in clean_command:
-                    clean_command = clean_command.replace(wake, "", 1)
-            
-            clean_command = clean_command.strip(",.?! ")
-            
             # Reset timers and state
             conversation_active = True
             last_interaction_time = time.time()
             state_manager.set_status("Listening...")
 
-            # If there was a command with the wake word, process it
+            # Process the cleaned command
             if clean_command:
                 state_manager.add_to_chat("User", clean_command)
                 brain.process(clean_command, speech.speak)
@@ -147,7 +143,7 @@ if __name__ == "__main__":
         brain.process(text, speech.speak)
 
     def on_exit():
-        print("\nShutting down Friday...")
+        print("\nShutting down SEVEN...")
 
     try:
         gui_manager.init_gui(

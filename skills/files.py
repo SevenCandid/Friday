@@ -1,11 +1,11 @@
 import os
 import shutil
-import glob
 from pathlib import Path
-import random
+from core import state_manager
+from core import file_manager
 
 def _find_on_system(filename):
-    """Searches common user directories for a specific file."""
+    """Searches common user directories for a specific file with a depth limit."""
     search_dirs = [
         Path.home() / "Desktop",
         Path.home() / "Downloads",
@@ -13,96 +13,68 @@ def _find_on_system(filename):
     ]
     
     matches = []
+    MAX_DEPTH = 2
+    
     for directory in search_dirs:
         if not directory.exists(): continue
-        
-        # Recursive search for the filename
+        base_depth = str(directory).count(os.sep)
         for root, dirs, files in os.walk(directory):
-            # Avoid hidden/system folders
+            current_depth = root.count(os.sep)
+            if current_depth - base_depth > MAX_DEPTH:
+                del dirs[:]
+                continue
             if any(part.startswith('.') for part in root.split(os.sep)): continue
-            
             for f in files:
                 if filename.lower() in f.lower():
                     matches.append(os.path.join(root, f))
-            
-            if len(matches) > 10: break # Stop searching after 10 matches
-            
+            if len(matches) > 10: break
     return matches
 
 def handle(command, speak):
-    # Detect File-related keywords
-    file_keywords = ["file", "folder", "search", "find", "locate", "move", "open"]
-    if not any(kw in command for kw in file_keywords):
+    cmd = command.lower().strip()
+    
+    # 0. Strict Keywords to avoid hijacking
+    file_keywords = ["file", "folder", "document", "directory", "note", "desktop", "download"]
+    if not any(kw in cmd for kw in file_keywords):
         return False
 
     # 1. SEARCH / FIND
-    if "find" in command or "search" in command or "locate" in command:
-        target = command.split("file")[-1].strip() if "file" in command else command.split("locate")[-1].strip()
-        if not target: return False
+    if any(k in cmd for k in ["find", "search", "locate"]):
+        target = cmd.split("file")[-1].strip() if "file" in cmd else cmd.split("folder")[-1].strip()
+        if not target or target == cmd: return False
         
-        speak(f"Searching for {target} on your system.")
+        speak(f"Triangulating {target} on your local system...")
         matches = _find_on_system(target)
-        
         if matches:
-            print(f"\n--- Found {len(matches)} matches for '{target}' ---")
-            for i, m in enumerate(matches[:10]):
-                print(f"[{i+1}] {m}")
-            print("------------------------------------------\n")
-            
-            speak(f"I found {len(matches)} matches. I've listed them in the console. Opening the first one for you.")
+            speak(f"I found {len(matches)} matches. Opening the most relevant one.")
             os.startfile(matches[0])
-        else:
-            speak(f"I'm sorry, I couldn't find any files matching {target} in your common folders.")
-        return True
-
-    # 2. OPEN
-    if "open" in command:
-        target = command.split("file")[-1].strip() if "file" in command else command.split("folder")[-1].strip()
-        if not target: return False
-        
-        # Try as a direct path first
-        if os.path.exists(target):
-            os.startfile(target)
-            speak(f"Opening {os.path.basename(target)}.")
             return True
         else:
-            # Try to find it if it's just a name
-            matches = _find_on_system(target)
-            if matches:
-                os.startfile(matches[0])
-                speak(f"Opening {os.path.basename(matches[0])}.")
-                return True
-        return False
+            speak(f"I couldn't locate any files matching {target} in your common directories.")
+            return True
 
-    # 3. MOVE
-    if "move" in command and "to" in command:
-        try:
-            # Extract "move [file] to [folder]"
-            parts = command.split("move")[-1].split("to")
-            file_name = parts[0].replace("file", "").strip()
-            folder_name = parts[1].strip()
-            
-            # Find the source file
-            src_matches = _find_on_system(file_name)
-            if not src_matches:
-                speak(f"I couldn't locate the source file {file_name}.")
-                return True
-                
-            src_path = src_matches[0]
-            
-            # Resolve destination folder
-            dest_dir = Path.home() / "Desktop" / folder_name # Default to desktop subfolder
-            if not dest_dir.exists():
-                os.makedirs(dest_dir)
-            
-            dest_path = dest_dir / os.path.basename(src_path)
-            
-            shutil.move(src_path, dest_path)
-            speak(f"Successfully moved {file_name} to your {folder_name} folder.")
-            print(f"[File Move] {src_path} -> {dest_path}")
-        except Exception as e:
-            print(f"[Move Error] {e}")
-            speak("I encountered an error while trying to move that file.")
+    # 2. OPEN FOLDERS
+    folder_map = {"download": "downloads", "desktop": "desktop", "document": "documents"}
+    for kw, path_key in folder_map.items():
+        if "open" in cmd and kw in cmd:
+            file_manager.open_folder(path_key)
+            speak(f"Opening your {kw} directory.")
+            return True
+
+    # 3. CREATE / WRITE
+    if "create" in cmd and "file" in cmd:
+        filename = "SEVEN_Tactical_File"
+        if "named" in cmd: filename = cmd.split("named")[-1].strip()
+        filepath = file_manager.SHORTCUTS["desktop"] / f"{filename}.txt"
+        if file_manager.create_file(str(filepath), "Initialized by SEVEN.\n"):
+            speak(f"I have deployed the file '{filename}' to your desktop.")
+        return True
+
+    if "note" in cmd and ("write" in cmd or "add" in cmd or "save" in cmd):
+        content = cmd.split("note")[-1].strip()
+        filepath = file_manager.SHORTCUTS["desktop"] / "SEVEN_Mission_Notes.txt"
+        if file_manager.write_file(str(filepath), f"- {content}\n"):
+            speak("Note captured and saved to your Mission Notes on the desktop.")
         return True
 
     return False

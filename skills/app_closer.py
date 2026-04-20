@@ -36,8 +36,8 @@ PROCESS_ALIASES = {
     "telegram": "Telegram.exe",
     "ollama": "ollama.exe",
     "ollama app": "ollama app.exe",
-    "friday": "Friday.exe",
-    "main": "Friday.exe"
+    "seven": "SEVEN.exe",
+    "main": "SEVEN.exe"
 }
 
 CLOSE_TRIGGERS = [

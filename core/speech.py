@@ -58,8 +58,9 @@ class VoiceEngine:
                 self._tts_done.set()
 
         self._tts_done.clear()
-        threading.Thread(target=_one_shot, daemon=True).start()
-        self._tts_done.wait(timeout=10.0)
+        t = threading.Thread(target=_one_shot, daemon=True)
+        t.start()
+        t.join(timeout=15.0) # Wait for the current sentence to finish before next in queue
 
     def _speak_piper(self, text):
         if not os.path.exists(PIPER_EXE):
@@ -111,8 +112,8 @@ class VoiceEngine:
 
     def speak(self, text):
         if text:
-            print(f"Friday: {text}")
-            state_manager.add_to_chat("Friday", text)
+            print(f"SEVEN: {text}")
+            state_manager.add_to_chat("SEVEN", text)
             
             # Skip voice output if Stealth Mode is active
             if state_manager.quiet_mode:

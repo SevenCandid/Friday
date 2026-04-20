@@ -31,9 +31,9 @@ def handle(command, speak):
         speak("Capturing tactical display snapshot.")
         time.sleep(0.5)
         desktop = os.path.join(os.path.join(os.environ['USERPROFILE']), 'Desktop')
-        path = os.path.join(desktop, "friday_screenshot.png")
+        path = os.path.join(desktop, "seven_screenshot.png")
         pyautogui.screenshot(path)
-        speak(f"Snapshot saved to your desktop as friday_screenshot.png.")
+        speak(f"Snapshot saved to your desktop as seven_screenshot.png.")
         return True
 
     # 3. Window Control

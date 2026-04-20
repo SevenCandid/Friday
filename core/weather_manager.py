@@ -33,8 +33,8 @@ def _weather_monitor():
                 
                 # Proactive Rain Alert
                 if rain_prob >= 50 and (current_time - _last_rain_alert > _ALERT_COOLDOWN):
-                    msg = f"Sir, I've detected a {rain_prob} percent chance of rain in {city} today. You might want to keep an umbrella handy."
-                    speak(msg)
+                    alert = f"Sir, I've detected a {rain_prob} percent chance of rain in {city} today. You might want to keep an umbrella handy."
+                    speak(alert)
                     state_manager.add_to_chat("SEVEN", f"🌩️ WEATHER ALERT: {rain_prob}% RAIN PROBABILITY")
                     _last_rain_alert = current_time
             

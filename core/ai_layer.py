@@ -1,5 +1,5 @@
 """
-ai_layer.py — Friday's Lightweight AI Post-Processor
+ai_layer.py — SEVEN's Lightweight AI Post-Processor
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Uses Ollama (phi3) ONLY as a post-processing tool.
 
@@ -21,7 +21,7 @@ from . import config
 
 OLLAMA_URL   = config.get("ai", "ollama_url")
 MODEL        = config.get("ai", "model")
-TIMEOUT      = 20  # seconds — keeps Friday responsive
+TIMEOUT      = 40  # seconds — gives SEVEN more time for deep research
 
 # Injected into every prompt to prevent hallucination
 _SAFETY_HEADER = (
@@ -192,7 +192,7 @@ def process_with_context(command: str, active_window: str) -> str:
         return "I'm here. How can I help you?"
         
     prompt = (
-        f"You are Friday, an AI assistant. "
+        f"You are SEVEN, an AI assistant. "
         f"The user is currently using the application: '{active_window}'. "
         f"COMMAND: {command}\n\n"
         f"TASK: Respond to the user's command. Use the current application context ONLY if it is relevant to the request. "
@@ -201,3 +201,23 @@ def process_with_context(command: str, active_window: str) -> str:
     )
     result = _query(prompt)
     return result if result else "I'm here, but I couldn't process that request right now."
+
+
+def synthesize_research(query: str, search_data: str) -> str:
+    """
+    Synthesizes multiple search result snippets into a structured tactical report.
+    """
+    if not search_data or not search_data.strip():
+        return "I found no data to analyze."
+
+    prompt = (
+        f"{_SAFETY_HEADER}"
+        f"TOPIC: {query}\n"
+        f"SOURCE DATA:\n{search_data}\n\n"
+        f"TASK: Synthesize the information above into a clear, structured tactical report about the TOPIC. "
+        f"Highlight key facts, compare different viewpoints if present, and be very concise. "
+        f"Use bullet points for clarity. Only use the provided SOURCE DATA."
+    )
+    
+    result = _query(prompt)
+    return result if result else "I've gathered the data, but I'm having trouble synthesizing it into a report right now."

@@ -129,10 +129,10 @@ def run_briefing(speak):
         gui.append(f"💻 SYSTEM:  CPU {cpu}%  •  RAM {ram}%  •  Battery {batt_str}")
         gui.append(f"⏰ ALARMS:  {alarm_voice}")
 
-        state_manager.add_to_chat("Friday", "\n".join(gui))
+        state_manager.add_to_chat("SEVEN", "\n".join(gui))
 
         # ── VOICE: Natural, Sentence-by-Sentence ─────────────────
-        speak(f"{greeting} I'm Friday. Here's your morning briefing.")
+        speak(f"{greeting} I'm SEVEN. Here's your morning briefing.")
         speak(weather_voice)
 
         if ghana_news:

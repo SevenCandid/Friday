@@ -1,7 +1,6 @@
 import threading
 import wikipedia
 from duckduckgo_search import DDGS
-from skills import news_skill
 from core import ai_layer
 
 # Common Acronym Mapping for Disambiguation
@@ -42,24 +41,49 @@ def _academic_search(query, speak):
         return None
 
 def _web_intel_search(query, speak):
-    """Mode C: SEARCH (Web Intel / DDG Only)"""
+    """Mode C: SEARCH (Web Intel / DDG Multi-Source)"""
     try:
         with DDGS() as ddgs:
-            results = list(ddgs.text(query, max_results=3))
+            results = list(ddgs.text(query, max_results=5))
             if results:
-                raw_body = results[0].get('body', '')
-                explanation = ai_layer.explain(raw_body)
-                speak(f"Performing general web search for {query}.")
-                return f"--- WEB INTEL ---\nSource: DuckDuckGo\n\n• {explanation}"
+                speak(f"Synthesizing intelligence from multiple sources for {query}...")
+                
+                # Combine all snippets for the AI to analyze
+                intelligence_pool = ""
+                for i, r in enumerate(results):
+                    intelligence_pool += f"[Source {i+1}]: {r.get('body', '')}\n"
+                
+                report = ai_layer.synthesize_research(query, intelligence_pool)
+                
+                # Add source links to the report
+                links = "\n\nSources:\n" + "\n".join([f"- {r.get('href')}" for r in results[:3]])
+                
+                return f"--- MULTI-SOURCE BRIEF ---\n{report}{links}"
             else:
-                return "I couldn't find any relevant results on the web for that query."
+                return "I couldn't find any relevant intelligence on the web for that query."
     except Exception as e:
         print(f"[Explorer Error] {e}")
-        return "I encountered an error while searching the web. The service might be temporarily unavailable."
+        return "I encountered an error while synthesizing web intelligence."
 
 def handle(command, speak):
     cmd = command.lower().strip()
     
+    # --- MODE C: SEARCH TRIGGER (HIGH PRIORITY) ---
+    search_keywords = ["search", "research", "ressearch", "re-search", "look up", "find information on"]
+    for kw in search_keywords:
+        if cmd.startswith(kw):
+            # Extract the query (remove the keyword and any leading space/punctuation)
+            query = cmd.replace(kw, "", 1).strip(",.?! ")
+            if query:
+                def _search_thread():
+                    result = _web_intel_search(query, speak)
+                    if result:
+                        speak(result)
+                    else:
+                        speak("I was unable to retrieve intelligence from the web.")
+                threading.Thread(target=_search_thread, daemon=True).start()
+                return True
+
     # --- MODE B: NEWS ROUTING (Strict) ---
     news_triggers = ["news", "headline", "headlines", "latest news", "update"]
     if any(t in cmd for t in news_triggers):
@@ -68,6 +92,11 @@ def handle(command, speak):
         return False
 
     # --- MODE A: KNOWLEDGE TRIGGER ---
+    # PERSONAL FILTER: Skip if the user is asking about themselves (memory handles this)
+    personal_words = ["my ", " my ", " i ", " me ", " me?", "do i", "am i"]
+    if any(p in cmd for p in personal_words):
+        return False
+
     knowledge_triggers = ["who is", "what is", "history of", "tell me about"]
     query = ""
     is_knowledge = False
@@ -84,7 +113,6 @@ def handle(command, speak):
                 break
 
     # --- MODE D: DIRECT ACRONYM MATCH ---
-    # If the user just says "UENR" or "KNUST", handle it immediately.
     if cmd in KNOWLEDGE_MAP:
         query = cmd
         is_knowledge = True
@@ -97,26 +125,10 @@ def handle(command, speak):
                 speak(result)
             else:
                 speak(f"I couldn't find a verified academic entry for {query}. Should I try a general web search?")
-                # SET THE PENDING ACTION so Friday remembers the 'Yes'
                 state_manager.pending_action = lambda: _web_intel_search(query, speak)
                 state_manager.pending_action_text = f"web_search_{query}"
         
         threading.Thread(target=_knowledge_thread, daemon=True).start()
         return True
-
-    # --- MODE C: SEARCH TRIGGER ---
-    if cmd.startswith("search ") or cmd.startswith("research "):
-        query = cmd.split("search ", 1)[-1] if "search" in cmd else cmd.split("research ", 1)[-1]
-        query = query.strip()
-        
-        if query:
-            def _search_thread():
-                result = _web_intel_search(query, speak)
-                if result:
-                    speak(result)
-                else:
-                    speak("I was unable to retrieve intelligence from the web.")
-            threading.Thread(target=_search_thread, daemon=True).start()
-            return True
 
     return False

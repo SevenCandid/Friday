@@ -14,7 +14,7 @@ def manage_startup():
     
     # Path to the Windows startup folder
     startup_folder = os.path.join(os.getenv('APPDATA'), r'Microsoft\Windows\Start Menu\Programs\Startup')
-    batch_path = os.path.join(startup_folder, "FridayAutoStart.bat")
+    batch_path = os.path.join(startup_folder, "SEVENAutoStart.bat")
     
     if auto_start:
         if not os.path.exists(batch_path):
@@ -25,7 +25,7 @@ def manage_startup():
                 else:
                     target = os.path.abspath(sys.argv[0])
 
-                # Create a .bat file to launch Friday
+                # Create a .bat file to launch SEVEN
                 with open(batch_path, 'w', encoding="utf-8") as f:
                     f.write(f'@echo off\n')
                     f.write(f'start "" "{target}"\n')

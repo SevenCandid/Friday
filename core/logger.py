@@ -3,7 +3,7 @@ import os
 import sys
 import datetime
 
-LOG_FILE = os.path.join(get_project_root(), "friday.log")
+LOG_FILE = os.path.join(get_project_root(), "seven.log")
 
 class LoggerWriter:
     """
@@ -50,7 +50,7 @@ def init_logger():
     # Create the log file if it doesn't exist, and write a startup header
     with open(LOG_FILE, "a", encoding="utf-8") as f:
         f.write("\n" + "="*50 + "\n")
-        f.write(f" Friday System Initialized : {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+        f.write(f" SEVEN System Initialized : {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
         f.write("="*50 + "\n")
 
     # Replace standard streams

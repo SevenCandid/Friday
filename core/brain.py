@@ -20,7 +20,7 @@ INTENT_MAP = {
     "TIME": ["time", "date", "clock", "today", "day", "calendar"],
     "NEWS": ["news", "headline", "headlines", "update", "happening", "report", "briefing"],
     "SEARCH": ["search", "who", "what", "where", "how", "tell", "about", "look", "google", "find", "research"],
-    "GENERAL_CHAT": ["friday", "hello", "hi", "hey", "thanks", "thank", "help", "who", "what", "how", "sup", "whats up"]
+    "GENERAL_CHAT": ["seven", "hello", "hi", "hey", "thanks", "thank", "help", "who", "what", "how", "sup", "whats up"]
 }
 
 def _normalize_command(command):

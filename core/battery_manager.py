@@ -40,7 +40,7 @@ def _monitor_loop():
                 if percent <= 20 and not is_plugged:
                     if not _alert_20_triggered:
                         speak("Warning. Battery critically low. I am dimming the tactical display to conserve power.")
-                        state_manager.add_to_chat("Friday", "⚠️ CRITICAL POWER: DIMMING DISPLAY")
+                        state_manager.add_to_chat("SEVEN", "⚠️ CRITICAL POWER: DIMMING DISPLAY")
                         
                         # Auto-dim screen
                         try:
@@ -55,7 +55,7 @@ def _monitor_loop():
                 elif percent <= 30 and not is_plugged:
                     if not _alert_30_triggered:
                         speak(f"Sir, battery is at {int(percent)} percent. Please consider a power source.")
-                        state_manager.add_to_chat("Friday", f"🔋 LOW BATTERY: {int(percent)}%")
+                        state_manager.add_to_chat("SEVEN", f"🔋 LOW BATTERY: {int(percent)}%")
                         _alert_30_triggered = True
                         _alert_20_triggered = False # Reset critical if we hovered back up slightly
                 

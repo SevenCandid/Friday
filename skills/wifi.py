@@ -37,7 +37,7 @@ def handle(command, speak):
             
             if ssids:
                 list_msg = "Available Networks:\n" + "\n".join([f"• {s}" for s in ssids])
-                state_manager.add_to_chat("Friday", list_msg)
+                state_manager.add_to_chat("SEVEN", list_msg)
                 speak("I have listed available WiFi networks on your screen. You can connect manually.")
             else:
                 speak("I couldn't find any available WiFi networks.")

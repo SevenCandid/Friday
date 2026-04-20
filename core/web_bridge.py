@@ -17,7 +17,7 @@ def get_template():
         with open(template_path, "r", encoding="utf-8") as f:
             return f.read()
     except:
-        return "<h1>Friday Remote HUD: Error loading template.</h1>"
+        return "<h1>SEVEN Remote HUD: Error loading template.</h1>"
 
 @app.route("/")
 def index():
@@ -31,7 +31,7 @@ def receive_command():
         replies = []
         def capture_reply(text):
             replies.append(text)
-            state_manager.add_to_chat("Friday", text)
+            state_manager.add_to_chat("SEVEN", text)
 
         state_manager.add_to_chat("Remote User", cmd)
         threading.Thread(target=brain.process, args=(cmd, capture_reply), daemon=True).start()
