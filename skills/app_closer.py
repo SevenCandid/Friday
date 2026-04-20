@@ -34,6 +34,10 @@ PROCESS_ALIASES = {
     "steam": "steam.exe",
     "whatsapp": "WhatsApp.exe",
     "telegram": "Telegram.exe",
+    "ollama": "ollama.exe",
+    "ollama app": "ollama app.exe",
+    "friday": "Friday.exe",
+    "main": "Friday.exe"
 }
 
 CLOSE_TRIGGERS = [
@@ -98,10 +102,16 @@ def _find_and_kill(target_name):
 
 
 def handle(command, speak):
+    import re
     cmd = command.lower().strip()
 
-    # Detect a close trigger
-    trigger_used = next((t for t in CLOSE_TRIGGERS if t in cmd), None)
+    # Detect a close trigger using word boundaries to avoid matching 'end' in 'friends'
+    trigger_used = None
+    for t in CLOSE_TRIGGERS:
+        if re.search(rf'\b{re.escape(t)}\b', cmd):
+            trigger_used = t
+            break
+            
     if not trigger_used:
         return False
 

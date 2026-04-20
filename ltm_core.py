@@ -1,7 +1,9 @@
+from path_helper import get_project_root
+import os
 import sqlite3
 import datetime
 
-DB_PATH = "friday_memory.db"
+DB_PATH = os.path.join(get_project_root(), "friday_memory.db")
 
 def _init_db():
     """Initializes the SQLite database and creates the tables if they don't exist."""

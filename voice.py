@@ -1,5 +1,6 @@
 import os
 import sys
+from path_helper import get_resource_path
 
 # --- WINDOWS DLL REPAIR ---
 # faster-whisper/ctranslate2 often fails to find its DLLs on Windows.
@@ -28,15 +29,15 @@ from vosk import Model, KaldiRecognizer
 from faster_whisper import WhisperModel
 
 # --- CONFIGURATION ---
-VOSK_MODEL_PATH = "vosk-model-small-en-us-0.15"
+VOSK_MODEL_PATH = get_resource_path("vosk-model-small-en-us-0.15")
 WHISPER_MODEL_SIZE = "tiny"
 
 # Audio parameters
 SAMPLE_RATE = 16000
 CHUNK_DURATION_MS = 30 # 30ms frames for VAD
 CHUNK_SIZE = int(SAMPLE_RATE * CHUNK_DURATION_MS / 1000) 
-BUFFER_SECONDS = 7
-ENERGY_THRESHOLD = 80  # Lowered even further for maximum sensitivity
+BUFFER_SECONDS = 10   # Catch longer commands
+ENERGY_THRESHOLD = 20  # Extreme sensitivity
 DEBUG_VOICE = False    # Set to True to see energy levels in console
 
 # Global state
@@ -54,6 +55,9 @@ def _process_audio(data):
     
     # Calculate Energy (RMS)
     rms = np.sqrt(np.mean(audio_np.astype(np.float32)**2))
+    
+    # Push normalized energy to state manager for visual reactivity
+    state_manager.audio_energy = min(1.0, rms / 800.0) 
     
     if DEBUG_VOICE and rms > 50:
         print(f"[Debug] Energy: {int(rms)}")
@@ -126,7 +130,21 @@ def listen(listen_timeout=5, phrase_time_limit=5):
     if not _pyaudio:
         print("[Voice] Activating High-Quality VAD & Noise Gate...")
         _pyaudio = pyaudio.PyAudio()
-        _stream = _pyaudio.open(format=pyaudio.paInt16, channels=1, rate=SAMPLE_RATE, input=True, frames_per_buffer=CHUNK_SIZE)
+        
+        # --- DEVICE SCANNER ---
+        print("[Voice] Scanning for audio input devices...")
+        for i in range(_pyaudio.get_device_count()):
+            info = _pyaudio.get_device_info_by_index(i)
+            if info['maxInputChannels'] > 0:
+                print(f"  - [Device {i}] {info['name']}")
+
+        _stream = _pyaudio.open(
+            format=pyaudio.paInt16, 
+            channels=1, 
+            rate=SAMPLE_RATE, 
+            input=True, 
+            frames_per_buffer=4000 # Increased for stability
+        )
 
     recognizer = KaldiRecognizer(_vosk_model, SAMPLE_RATE)
     
@@ -147,6 +165,7 @@ def listen(listen_timeout=5, phrase_time_limit=5):
             # 1. Pre-process (Energy Gate & Normalization)
             clean_data, rms = _process_audio(raw_data)
             if clean_data is None:
+                state_manager.audio_energy *= 0.8 # Decay for smoothness
                 continue
 
             # 2. VAD (Voice Activity Detection)
@@ -160,31 +179,36 @@ def listen(listen_timeout=5, phrase_time_limit=5):
 
             _audio_buffer.append(clean_data)
 
+            # --- IMPROVED WAKE WORD DETECTION ---
+            # We check PartialResult but we DON'T return immediately if there's more speech
+            partial_data = json.loads(recognizer.PartialResult())
+            partial_text = partial_data.get("partial", "").lower()
+            
+            # If we hear 'friday', we keep listening for the rest of the command
+            # until AcceptWaveform is true.
+            
             if recognizer.AcceptWaveform(clean_data):
                 result = json.loads(recognizer.Result())
                 vosk_text = result.get("text", "").lower().strip()
                 
-                if not vosk_text or len(vosk_text.split()) < 2:
-                    # Filter out single-word garbage or noise
+                if not vosk_text:
                     continue
+
+                # If the user just said "friday", or "friday [command]"
+                if "friday" in vosk_text or "friday" in partial_text:
+                    # Clean the wake word from the command if present
+                    cmd = vosk_text.replace("friday", "").strip()
+                    if not cmd:
+                        return "friday" # Just the wake word
+                    return cmd # The actual command!
                 
-                # POWER KEYWORDS
-                power_keywords = [
-                    "open", "launch", "time", "date", "alarm", "set", 
-                    "who", "what", "how", "hello", "hi", "hey", "friday",
-                    "thanks", "thank", "stop", "snooze", "cancel",
-                    "write", "read", "create"
-                ]
-                
-                word_count = len(vosk_text.split())
-                has_keyword = any(kw in vosk_text for kw in power_keywords)
-                
-                # Decision Logic
-                if word_count <= 4 and has_keyword:
+                # Fallback for other power keywords
+                power_keywords = ["open", "launch", "time", "date", "alarm", "stop", "cancel", "battery"]
+                if any(kw in vosk_text for kw in power_keywords):
                     return vosk_text
                 else:
                     whisper_text = _get_whisper_transcription(list(_audio_buffer))
-                    if whisper_text and len(whisper_text.split()) >= 2:
+                    if whisper_text and len(whisper_text.split()) >= 1:
                         return whisper_text
                     return None # Discard garbage transcription
                     

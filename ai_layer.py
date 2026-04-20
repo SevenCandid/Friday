@@ -182,3 +182,22 @@ def answer_from_memory(question: str, facts: list) -> str:
     
     result = _query(prompt)
     return result if result else "I'm having trouble accessing my memory right now."
+
+
+def process_with_context(command: str, active_window: str) -> str:
+    """
+    Processes a general command while taking the currently focused window into account.
+    """
+    if not command:
+        return "I'm here. How can I help you?"
+        
+    prompt = (
+        f"You are Friday, an AI assistant. "
+        f"The user is currently using the application: '{active_window}'. "
+        f"COMMAND: {command}\n\n"
+        f"TASK: Respond to the user's command. Use the current application context ONLY if it is relevant to the request. "
+        f"If the user says 'this' or 'here', they are likely referring to the current application. "
+        f"Keep the response short, conversational, and helpful."
+    )
+    result = _query(prompt)
+    return result if result else "I'm here, but I couldn't process that request right now."

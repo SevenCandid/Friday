@@ -53,33 +53,17 @@ def lock_pc():
         return False
 
 def shutdown_pc():
-    """Shuts down the PC, requiring voice confirmation for safety."""
-    print("\n[System] Awaiting voice confirmation to SHUT DOWN...")
+    """Sets a pending action to shut down the PC."""
+    import state_manager
+    state_manager.pending_action = lambda: os.system("shutdown /s /t 1")
+    state_manager.pending_action_text = "shutdown the computer"
     speak("Are you sure you want to shut down the computer?")
-    
-    # Listen for the user's verbal confirmation
-    confirm = listen(listen_timeout=10)
-    
-    if confirm and ("yes" in confirm or "sure" in confirm or "do it" in confirm):
-        print("Initiating shutdown sequence...")
-        os.system("shutdown /s /t 1")
-        return True
-    else:
-        print("Shutdown aborted.")
-        return False
+    return True
 
 def restart_pc():
-    """Restarts the PC, requiring voice confirmation for safety."""
-    print("\n[System] Awaiting voice confirmation to RESTART...")
+    """Sets a pending action to restart the PC."""
+    import state_manager
+    state_manager.pending_action = lambda: os.system("shutdown /r /t 1")
+    state_manager.pending_action_text = "restart the computer"
     speak("Are you sure you want to restart the computer?")
-    
-    # Listen for the user's verbal confirmation
-    confirm = listen(listen_timeout=10)
-    
-    if confirm and ("yes" in confirm or "sure" in confirm or "do it" in confirm):
-        print("Initiating restart sequence...")
-        os.system("shutdown /r /t 1")
-        return True
-    else:
-        print("Restart aborted.")
-        return False
+    return True

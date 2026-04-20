@@ -2,6 +2,7 @@ import difflib
 import skill_manager
 import memory_manager
 import state_manager
+import ai_layer
 
 # Intent Definitions (Clusters of related words)
 INTENT_MAP = {
@@ -118,6 +119,14 @@ def process(command, response_callback):
     # 4. Routing
     # If confidence is extremely low, it might be noise or general chat
     if confidence < 5:
+        # Context Awareness: If the user says 'this' or 'here', or asks for an explanation/summary
+        # and we have an active window, let the AI handle it with context.
+        context_keywords = ["this", "here", "explain", "summarize", "about", "what"]
+        if any(kw in cmd for kw in context_keywords) and ai_layer.is_available():
+            response = ai_layer.process_with_context(cmd, state_manager.active_window)
+            mem_callback(response)
+            return True
+            
         # Fallback to general skill processing (for chat, etc.)
         handled = skill_manager.execute_command(cmd, mem_callback)
         if not handled:

@@ -5,6 +5,15 @@ import shutil
 def build():
     print("--- Friday Executable Builder ---")
     
+    # 0. Kill Friday if it's running (to avoid PermissionError)
+    import subprocess
+    try:
+        subprocess.run(["taskkill", "/F", "/IM", "Friday.exe"], 
+                      stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        print("[Build] Terminated running Friday instance.")
+    except:
+        pass
+
     # 1. Clean previous builds
     try:
         if os.path.exists("build"): shutil.rmtree("build")
@@ -25,6 +34,8 @@ def build():
         '--add-data=skills;skills',
         '--add-data=vosk-model-small-en-us-0.15;vosk-model-small-en-us-0.15',
         '--add-data=personality.py;.',
+        '--add-data=seven.ico;.',
+        '--icon=seven.ico',
         
         # Hidden imports (libraries PyInstaller might miss)
         '--hidden-import=pycaw',
@@ -34,6 +45,8 @@ def build():
         '--hidden-import=pygetwindow',
         '--hidden-import=pytesseract',
         '--hidden-import=PIL',
+        '--hidden-import=flask',
+        '--hidden-import=werkzeug',
         '--hidden-import=importlib.metadata',
         '--hidden-import=winsound',
         '--hidden-import=feedparser',
@@ -44,6 +57,15 @@ def build():
         '--hidden-import=ai_layer',
         '--hidden-import=ltm_core',
         '--hidden-import=sqlite3',
+        '--hidden-import=pyautogui',
+        '--hidden-import=pycaw.pycaw',
+        '--hidden-import=system_control',
+        '--hidden-import=file_manager',
+        '--hidden-import=battery_manager',
+        '--hidden-import=comtypes',
+        '--hidden-import=pystray',
+        '--hidden-import=PIL.Image',
+        '--hidden-import=PIL.ImageTk',
         '--collect-all=webrtcvad',     # FIX: Collects webrtcvad even if metadata is missing
         '--collect-all=vosk',          # FIX: Collects Vosk DLLs and internal files
         '--collect-all=pyttsx3',       # FIX: Ensures speech engine is fully bundled

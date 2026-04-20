@@ -1,11 +1,17 @@
+import multiprocessing
+
+if __name__ == '__main__':
+    multiprocessing.freeze_support()
+
 import time
 import difflib
 import threading
 import sys
 
-# Initialize the persistent file logger first
+# Initialize the persistent file logger only in the main process
 import logger
-logger.init_logger()
+if multiprocessing.current_process().name == 'MainProcess':
+    logger.init_logger()
 
 import sentinel
 import context_engine
@@ -19,6 +25,9 @@ import gui_manager
 import state_manager
 import skill_manager
 import brain
+import startup_manager
+import observer
+import web_bridge
 from personality import get_response
 
 def is_wake_word(text: str) -> bool:
@@ -54,6 +63,9 @@ def run_assistant():
     # System Init
     alarm_manager.start_background_manager()
     battery_manager.start_monitoring()
+    startup_manager.manage_startup()
+    observer.start_context_tracking()
+    web_bridge.start_background_bridge()
     
     conversation_active = False
 
@@ -103,9 +115,6 @@ def run_assistant():
             state_manager.status = "Listening..."
 
 if __name__ == "__main__":
-    import multiprocessing
-    multiprocessing.freeze_support()
-    
     _ready_triggered = False
 
     def on_gui_ready():

@@ -4,6 +4,8 @@ import wave
 import subprocess
 import threading
 import queue
+import multiprocessing
+import time
 import time
 import winsound
 import state_manager
@@ -15,34 +17,60 @@ VOICE_MODEL = config.get("voice", "model")
 TEMP_WAV = "last_speech.wav"
 
 # ---------------------------------------------------------------
-# PERSISTENT TTS SERVER
-# One long-lived subprocess. pyttsx3 runs on its OWN main thread.
-# -u = unbuffered I/O so "done" signals arrive immediately.
+# PERSISTENT TTS WORKER (PyInstaller Safe)
 # ---------------------------------------------------------------
-_TTS_SERVER_SCRIPT = """
-import pyttsx3, sys
+def _tts_worker(in_q, out_q):
+    """
+    Runs in a completely separate process to prevent GUI freezing.
+    Uses multiprocessing queues for safe communication in bundled .exe
+    """
+    import pyttsx3
+    import time
+    import comtypes
+    
+    try:
+        # Initialize COM for SAPI5 in the child process
+        comtypes.CoInitialize()
+        
+        engine = pyttsx3.init()
+        # Set volume to maximum (1.0)
+        engine.setProperty('volume', 1.0)
+        
+        # Set female voice if available
+        voices = engine.getProperty('voices')
+        for v in voices:
+            if 'female' in v.name.lower() or 'zira' in v.name.lower():
+                engine.setProperty('voice', v.id)
+                break
+        engine.setProperty('rate', 175)
+        
+        with open("tts_debug.log", "a") as f:
+            f.write(f"TTS Worker Initialized Successfully at {time.ctime()}\n")
+        
+        out_q.put('ready')
+        
+        while True:
+            text = in_q.get()
+            if text is None:
+                break
+            
+            text = text.strip()
+            if text:
+                try:
+                    engine.say(text)
+                    engine.runAndWait()
+                except Exception as e:
+                    # Log error to a file since stdout is None in --windowed
+                    with open("tts_debug.log", "a") as f:
+                        f.write(f"Speak Error: {e}\n")
+            
+            out_q.put('done')
+            
+    except Exception as e:
+        with open("tts_debug.log", "a") as f:
+            f.write(f"Initialization Error: {e}\n")
+        out_q.put('error')
 
-e = pyttsx3.init()
-for v in e.getProperty('voices'):
-    if 'female' in v.name.lower() or 'zira' in v.name.lower():
-        e.setProperty('voice', v.id)
-        break
-e.setProperty('rate', 175)
-
-sys.stdout.write('ready\\n')
-sys.stdout.flush()
-
-while True:
-    line = sys.stdin.readline()
-    if not line:
-        break
-    text = line.strip()
-    if text:
-        e.say(text)
-        e.runAndWait()
-    sys.stdout.write('done\\n')
-    sys.stdout.flush()
-"""
 
 
 def _get_wav_duration(path):
@@ -60,74 +88,94 @@ class VoiceEngine:
         self._stop_event = threading.Event()
         self._active_proc = None   # Piper process
         self._tts_proc = None      # Persistent pyttsx3 server
+        self._tts_in = None
+        self._tts_out = None
         self._tts_done = threading.Event()
 
-        self._start_tts_server()
+        # We DO NOT start the TTS server here to avoid multiprocessing crash at boot.
+        # It will be lazily started in _speak_via_server.
         threading.Thread(target=self._worker, daemon=True, name="VoiceWorker").start()
 
-    # ------------------------------------------------------------------
-    # Persistent TTS Server
-    # ------------------------------------------------------------------
     def _start_tts_server(self):
+        """Starts a dedicated TTS thread with its own COM context for stability."""
         try:
-            self._tts_proc = subprocess.Popen(
-                [sys.executable, "-u", "-c", _TTS_SERVER_SCRIPT],
-                stdin=subprocess.PIPE,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.DEVNULL,
-                text=True,
-                bufsize=1
-            )
-            threading.Thread(
-                target=self._read_tts_output,
+            self._tts_queue = queue.Queue()
+            self._tts_thread = threading.Thread(
+                target=self._tts_worker_thread,
                 daemon=True,
-                name="TTS-Reader"
-            ).start()
-            print("[Speech] TTS server online.")
+                name="TTS-Thread"
+            )
+            self._tts_thread.start()
+            print("[Speech] High-stability TTS thread online.")
         except Exception as e:
-            print(f"[Speech] TTS server failed: {e}")
-            self._tts_proc = None
+            print(f"[Speech Error] Failed to start TTS thread: {e}")
 
-    def _read_tts_output(self):
-        """Watches server stdout and fires _tts_done on each 'done' line."""
+    def _tts_worker_thread(self):
+        """Dedicated thread for pyttsx3 to avoid GUI conflicts."""
+        import pyttsx3
+        import pythoncom
+        
         try:
-            while True:
-                line = self._tts_proc.stdout.readline()
-                if not line:
+            # Initialize COM for SAPI5 in this thread
+            pythoncom.CoInitialize()
+            
+            engine = pyttsx3.init()
+            engine.setProperty('volume', 1.0)
+            engine.setProperty('rate', 175)
+            
+            # Set female voice if available
+            voices = engine.getProperty('voices')
+            for v in voices:
+                if 'female' in v.name.lower() or 'zira' in v.name.lower():
+                    engine.setProperty('voice', v.id)
                     break
-                if line.strip() == "done":
-                    self._tts_done.set()
-        except Exception:
-            pass
+
+            while True:
+                text = self._tts_queue.get()
+                if text is None: break
+                
+                try:
+                    engine.say(text)
+                    engine.runAndWait()
+                except:
+                    pass
+                
+                self._tts_done.set()
+                self._tts_queue.task_done()
+                
+        except Exception as e:
+            print(f"[Speech Thread Error] {e}")
 
     def _speak_via_server(self, text):
-        """Send full text to TTS server, wait until completely spoken."""
-        # Restart if crashed
-        if not self._tts_proc or self._tts_proc.poll() is not None:
-            self._start_tts_server()
-            time.sleep(0.5)
+        """One-Shot TTS: Initialize, speak, and close. Most reliable for Windows SAPI5."""
+        def _one_shot():
+            import pyttsx3
+            import pythoncom
+            try:
+                pythoncom.CoInitialize()
+                engine = pyttsx3.init()
+                engine.setProperty('volume', 1.0)
+                engine.setProperty('rate', 175)
+                
+                # Female voice selection
+                voices = engine.getProperty('voices')
+                for v in voices:
+                    if 'female' in v.name.lower() or 'zira' in v.name.lower():
+                        engine.setProperty('voice', v.id)
+                        break
+                
+                engine.say(text)
+                engine.runAndWait()
+            except Exception as e:
+                print(f"[One-Shot TTS Error] {e}")
+            finally:
+                self._tts_done.set()
 
-        if not self._tts_proc:
-            return
-
-        try:
-            # Replace any internal newlines so the server reads it as one line
-            safe = text.replace("\n", " ").replace("\r", " ")
-            self._tts_done.clear()
-            self._tts_proc.stdin.write(safe + "\n")
-            self._tts_proc.stdin.flush()
-
-            # Wait for "done" — check stop every 50 ms
-            while not self._tts_done.wait(timeout=0.05):
-                if self._stop_event.is_set():
-                    self._tts_proc.terminate()
-                    self._tts_proc = None
-                    return
-                if self._tts_proc and self._tts_proc.poll() is not None:
-                    break  # server died
-        except Exception as e:
-            print(f"[TTS Error] {e}")
-            self._tts_proc = None
+        self._tts_done.clear()
+        threading.Thread(target=_one_shot, daemon=True).start()
+        
+        # Wait for speech to finish to maintain conversation flow
+        self._tts_done.wait(timeout=10.0)
 
     # ------------------------------------------------------------------
     # Piper Neural Voice (Primary)
@@ -199,7 +247,7 @@ class VoiceEngine:
         if self._active_proc:
             try: self._active_proc.terminate()
             except: pass
-        if self._tts_proc and self._tts_proc.poll() is None:
+        if self._tts_proc and self._tts_proc.is_alive():
             try: self._tts_proc.terminate()
             except: pass
             self._tts_proc = None

@@ -3,6 +3,7 @@ import threading
 import time
 import difflib
 from pathlib import Path
+import state_manager
 
 # Internal index of apps
 _app_index = {}
@@ -41,6 +42,7 @@ def _scan_apps():
                         
     _app_index = new_index
     _last_scan = time.time()
+    state_manager.app_count = len(_app_index)
     print(f"[App Launcher] Indexed {len(_app_index)} applications.")
 
 def _background_refresher():

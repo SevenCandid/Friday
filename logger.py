@@ -1,8 +1,9 @@
-import sys
+from path_helper import get_project_root
 import os
+import sys
 import datetime
 
-LOG_FILE = "friday.log"
+LOG_FILE = os.path.join(get_project_root(), "friday.log")
 
 class LoggerWriter:
     """
@@ -15,10 +16,14 @@ class LoggerWriter:
 
     def write(self, message):
         # Always write to the original stream (console if visible)
-        self.original_stream.write(message)
+        if self.original_stream is not None:
+            try:
+                self.original_stream.write(message)
+            except Exception:
+                pass
         
         # Only log non-empty, non-whitespace strings to avoid bloating
-        if message.strip():
+        if message and message.strip():
             timestamp = datetime.datetime.now().strftime("[%Y-%m-%d %H:%M:%S]")
             try:
                 with open(self.log_file, "a", encoding="utf-8") as f:
@@ -31,7 +36,11 @@ class LoggerWriter:
                 pass # Fail silently if file is locked
 
     def flush(self):
-        self.original_stream.flush()
+        if self.original_stream is not None:
+            try:
+                self.original_stream.flush()
+            except Exception:
+                pass
 
 def init_logger():
     """

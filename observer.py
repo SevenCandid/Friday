@@ -1,12 +1,27 @@
+import os
+import threading
+import time
+import state_manager
 import pygetwindow as gw
 import PIL.ImageGrab
-import os
+
+def start_context_tracking():
+    """Starts a background thread to continuously track the active window."""
+    def _track():
+        while True:
+            try:
+                state_manager.active_window = get_active_app()
+            except:
+                pass
+            time.sleep(2) # Update every 2 seconds
+            
+    threading.Thread(target=_track, daemon=True, name="ContextTracker").start()
 
 # Optional OCR library
 try:
     import pytesseract
-    # You may need to specify the path to your Tesseract-OCR executable here:
-    # pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
+    # Standard installation path for Tesseract on Windows
+    pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
     HAS_OCR = True
 except ImportError:
     HAS_OCR = False

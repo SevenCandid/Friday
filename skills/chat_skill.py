@@ -7,6 +7,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import memory_manager
 import ltm_core
 import ai_layer
+import state_manager
 from personality import get_response
 
 def handle(command, speak):
@@ -74,6 +75,18 @@ def handle(command, speak):
 
     if "what's up" in command or "whats up" in command:
         speak("Not much, just here and ready to help. How about you?")
+        return True
+
+    # --- AI CHAT FALLBACK ---
+    # If none of the above hardcoded rules matched, use the AI to generate a response.
+    # This makes Friday much smarter and able to handle questions like "How are you doing?"
+    if ai_layer.is_available():
+        def _ai_chat_thread():
+            # Use context-aware processing
+            response = ai_layer.process_with_context(command, state_manager.active_window)
+            speak(response)
+        
+        threading.Thread(target=_ai_chat_thread, daemon=True).start()
         return True
 
     return False

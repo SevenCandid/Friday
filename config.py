@@ -18,7 +18,8 @@ _default_config = {
     },
     "system": {
         "cpu_warning_threshold": 85,
-        "battery_warning_threshold": 20
+        "battery_warning_threshold": 20,
+        "auto_start": True
     }
 }
 

@@ -4,12 +4,15 @@ import queue
 status = "Idle"
 alarm_ringing = False
 is_speaking = False
+active_window = "Unknown"    # Tracks currently focused window
+audio_energy = 0.0           # Real-time mic volume (0.0 to 1.0+)
 pending_action = None       # Stores the function to execute on 'Yes'
 pending_action_text = None  # Stores the label for the pending action
+app_count = 0                # Number of indexed applications
 
-# Thread-safe queue for chat messages
-# Format: {"sender": "User/Friday", "text": "..."}
+# Thread-safe queues for chat messages
 chat_queue = queue.Queue()
+remote_chat_queue = queue.Queue() # For the mobile HUD
 
 def set_status(text):
     global status
@@ -24,5 +27,7 @@ def set_speaking(speaking):
     is_speaking = speaking
 
 def add_to_chat(sender, text):
-    """Adds a message to the chat queue for the GUI to pick up."""
-    chat_queue.put({"sender": sender, "text": text})
+    """Adds a message to both the desktop and remote chat queues."""
+    msg = {"sender": sender, "text": text}
+    chat_queue.put(msg)
+    remote_chat_queue.put(msg)
