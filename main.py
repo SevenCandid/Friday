@@ -28,6 +28,7 @@ from core import brain
 from core import startup_manager
 from core import observer
 from core import web_bridge
+from core import weather_manager
 from core.personality import get_response
 
 def is_wake_word(text: str) -> bool:
@@ -63,37 +64,43 @@ def run_assistant():
     # System Init
     alarm_manager.start_background_manager()
     battery_manager.start_monitoring()
+    weather_manager.start_monitoring()
     startup_manager.manage_startup()
     observer.start_context_tracking()
     web_bridge.start_background_bridge()
     
     conversation_active = False
+    last_interaction_time = 0
+    FOLLOW_UP_TIMEOUT = 10 # 10 seconds for follow-up as requested
 
     while True:
+        # Determine if we should be in active conversation or waiting for wake word
+        current_time = time.time()
+        if conversation_active and (current_time - last_interaction_time > FOLLOW_UP_TIMEOUT):
+            print("[System] Follow-up window closed. Entering hibernation (Silent Mode)...")
+            conversation_active = False
+            state_manager.set_status("Wake word active")
+
+        # Listen for input
         current_timeout = 30 if conversation_active else 5
         input_text = listen(listen_timeout=current_timeout)
         
         if input_text is None:
-            if conversation_active:
-                conversation_active = False
             continue
             
         if not input_text:
             continue
             
-        if not conversation_active:
-            print(f"[Standby] Heard: '{input_text}'")
-            
-        # Handle Command Execution via Skills
+        # --- CASE 1: ACTIVE CONVERSATION (Follow-up Mode) ---
         if conversation_active:
-            state_manager.set_status("Listening...")
             print(f"User: '{input_text}'")
             state_manager.add_to_chat("User", input_text)
             state_manager.set_status("Processing...")
             brain.process(input_text, speech.speak)
+            last_interaction_time = time.time() # Reset follow-up timer
             continue
             
-        # Handle Wake Word Detection
+        # --- CASE 2: STANDBY (Listening for Wake Word 'SEVEN') ---
         if is_wake_word(input_text):
             audio_manager.play_chirp()
             
@@ -105,14 +112,19 @@ def run_assistant():
             
             clean_command = clean_command.strip(",.?! ")
             
-            handled = brain.process(clean_command, speech.speak)
-            
-            if not handled:
+            # Reset timers and state
+            conversation_active = True
+            last_interaction_time = time.time()
+            state_manager.set_status("Listening...")
+
+            # If there was a command with the wake word, process it
+            if clean_command:
+                state_manager.add_to_chat("User", clean_command)
+                brain.process(clean_command, speech.speak)
+            else:
+                # If just the wake word, give a friendly response
                 wake_resp = get_response("wake")
                 speech.speak(wake_resp)
-            
-            conversation_active = True
-            state_manager.status = "Listening..."
 
 if __name__ == "__main__":
     _ready_triggered = False

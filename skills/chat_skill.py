@@ -29,7 +29,7 @@ def handle(command, speak):
         
     # Long-Term Memory: Recall Fact
     memory_questions = ["what is my", "what are my", "do i ", "who am i", "do you remember", "what did i tell you"]
-    if any(q in command for q in memory_questions):
+    if any(q in command for q in memory_questions) and "location" not in command:
         def _recall_memory_thread():
             facts = ltm_core.get_all_facts()
             answer = ai_layer.answer_from_memory(command, facts)
@@ -84,10 +84,11 @@ def handle(command, speak):
         speak("Not much, just here and ready to help. How about you?")
         return True
 
-    # Skip AI fallback for system commands so they reach system_skill.py
+    # Skip AI fallback for system and location commands
     system_keywords = ["restart", "shutdown", "shut down", "turn off", "power", "log off"]
+    location_keywords = ["location", "where am i", "where are we"]
     search_keywords = ["price", "who is", "what is", "where is", "how many", "score", "weather", "latest"]
-    if any(kw in command for kw in search_keywords + system_keywords):
+    if any(kw in command for kw in search_keywords + system_keywords + location_keywords):
         return False
 
     if ai_layer.is_available():

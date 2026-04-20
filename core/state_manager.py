@@ -10,6 +10,9 @@ pending_action = None       # Stores the function to execute on 'Yes'
 pending_action_text = None  # Stores the label for the pending action
 app_count = 0                # Number of indexed applications
 quiet_mode = False           # If True, Friday skips voice output but still shows HUD alerts
+current_city = "Accra"       # Default city
+current_lat = 5.6037         # Default Accra Lat
+current_lon = -0.1870        # Default Accra Lon
 
 # Thread-safe queues for chat messages
 chat_queue = queue.Queue()

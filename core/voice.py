@@ -35,7 +35,7 @@ SAMPLE_RATE = 16000
 CHUNK_DURATION_MS = 30 # 30ms frames for VAD
 CHUNK_SIZE = int(SAMPLE_RATE * CHUNK_DURATION_MS / 1000) 
 BUFFER_SECONDS = 10   # Catch longer commands
-ENERGY_THRESHOLD = 20  # Extreme sensitivity
+ENERGY_THRESHOLD = 300 # Increased for silent background
 DEBUG_VOICE = False    # Set to True to see energy levels in console
 
 # Global state
@@ -44,7 +44,7 @@ _vosk_model = None
 _whisper_model = None
 _pyaudio = None
 _stream = None
-_vad = webrtcvad.Vad(1) # Mode 1: Less aggressive filtering (0-3)
+_vad = webrtcvad.Vad(3) # Mode 3: Most aggressive filtering (0-3) for silence
 _failed_init = False
 
 def _process_audio(data):
@@ -188,21 +188,17 @@ def listen(listen_timeout=5, phrase_time_limit=5):
                 if not vosk_text:
                     continue
 
-                if "friday" in vosk_text or "friday" in partial_text:
-                    cmd = vosk_text.replace("friday", "").strip()
+                if "seven" in vosk_text or "seven" in partial_text:
+                    cmd = vosk_text.replace("seven", "").strip()
                     if not cmd:
-                        return "friday" 
+                        return "seven" 
                     return cmd 
                 
-                # Fallback for other power keywords
-                power_keywords = ["open", "launch", "time", "date", "alarm", "stop", "cancel", "battery"]
-                if any(kw in vosk_text for kw in power_keywords):
-                    return vosk_text
-                else:
-                    whisper_text = _get_whisper_transcription(list(_audio_buffer))
-                    if whisper_text and len(whisper_text.split()) >= 1:
-                        return whisper_text
-                    return None 
+                # High-accuracy fallback for potential commands
+                whisper_text = _get_whisper_transcription(list(_audio_buffer))
+                if whisper_text and "seven" in whisper_text:
+                    return whisper_text
+                return None 
                     
         except Exception as e:
             print(f"[Voice Error] {e}")
