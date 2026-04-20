@@ -1,4 +1,4 @@
-import ai_layer
+from core import ai_layer
 
 print("Testing AI Layer Connection...")
 

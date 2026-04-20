@@ -9,6 +9,7 @@ audio_energy = 0.0           # Real-time mic volume (0.0 to 1.0+)
 pending_action = None       # Stores the function to execute on 'Yes'
 pending_action_text = None  # Stores the label for the pending action
 app_count = 0                # Number of indexed applications
+quiet_mode = False           # If True, Friday skips voice output but still shows HUD alerts
 
 # Thread-safe queues for chat messages
 chat_queue = queue.Queue()

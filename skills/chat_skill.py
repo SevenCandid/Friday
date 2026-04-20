@@ -3,12 +3,11 @@ import os
 import random
 import threading
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import memory_manager
-import ltm_core
-import ai_layer
-import state_manager
-from personality import get_response
+from core import memory_manager
+from core import ltm_core
+from core import ai_layer
+from core import state_manager
+from core.personality import get_response
 
 def handle(command, speak):
     # Explicit Memory Feature Check
@@ -58,7 +57,15 @@ def handle(command, speak):
         return True
     
     if "your name" in command or "who are you" in command:
-        speak("I am Friday, your personal assistant.")
+        speak("I am SEVEN, your personal assistant.")
+        return True
+
+    # Creator / Origin Questions
+    creator_keywords = ["who made you", "who created you", "who is your creator", "who is your maker", "who developed you", "who is your developer"]
+    if any(k in command for k in creator_keywords):
+        from core import personality
+        response = f"I was created and developed by {personality.CREATOR_NAME}, also known as {personality.CREATOR_ALIAS}. He is a talented developer from {personality.CREATOR_LOCATION}."
+        speak(response)
         return True
         
     if "how are you" in command:
@@ -77,11 +84,10 @@ def handle(command, speak):
         speak("Not much, just here and ready to help. How about you?")
         return True
 
-    # --- AI CHAT FALLBACK ---
-    # If none of the above hardcoded rules matched, use the AI to generate a response.
-    # Note: We skip this if the command looks like a web search, to let web_search_skill handle it.
+    # Skip AI fallback for system commands so they reach system_skill.py
+    system_keywords = ["restart", "shutdown", "shut down", "turn off", "power", "log off"]
     search_keywords = ["price", "who is", "what is", "where is", "how many", "score", "weather", "latest"]
-    if any(kw in command for kw in search_keywords):
+    if any(kw in command for kw in search_keywords + system_keywords):
         return False
 
     if ai_layer.is_available():

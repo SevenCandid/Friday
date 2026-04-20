@@ -28,7 +28,7 @@ def handle(command, speak):
     # 3. List Networks
     if "show" in command or "list" in command or "available" in command:
         try:
-            import state_manager
+            from core import state_manager
             result = subprocess.run(['netsh', 'wlan', 'show', 'networks'], check=True, capture_output=True, text=True)
             
             # Clean up the output to show just SSIDs for the chat window

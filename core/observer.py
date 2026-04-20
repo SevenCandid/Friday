@@ -1,7 +1,7 @@
 import os
 import threading
 import time
-import state_manager
+from . import state_manager
 import pygetwindow as gw
 import PIL.ImageGrab
 

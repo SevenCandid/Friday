@@ -1,10 +1,10 @@
 import psutil
 import time
 import threading
-import observer
-import memory_manager
+from . import observer
+from . import memory_manager
+from . import config
 from skills import morning_briefing
-import config
 
 
 # Cooldown timers to prevent spam (in seconds)
@@ -21,9 +21,9 @@ def greet_user(speak):
     import random
     
     greetings = [
-        "Welcome back. I'm Friday, your personal assistant.",
-        "Good to see you again. I'm Friday, your assistant.",
-        "Hello again. Friday here, ready to help."
+        "Welcome back. I'm SEVEN, your personal assistant.",
+        "Good to see you again. I'm SEVEN, your assistant.",
+        "Hello again. SEVEN here, ready to help."
     ]
     
     try:
@@ -43,7 +43,6 @@ def greet_user(speak):
         speak(msg)
 
         # ── AUTO MORNING BRIEFING ──────────────────────────────
-        # Fires automatically if it's 5am–11am and hasn't run today
         if morning_briefing.should_run_briefing():
             morning_briefing.run_briefing(speak)
 
@@ -72,8 +71,6 @@ def _monitor_loop(speak):
 
             # 3. Check Context (Observer Integration)
             active_app = observer.get_active_app()
-            # This can be used for "Smart Suggestions" later
-            # e.g. "I see you're using VS Code, should I open your task list?"
             
         except Exception as e:
             print(f"[Sentinel Error] Monitor loop hit a snag: {e}")

@@ -13,7 +13,7 @@ STRICT RULES:
 """
 
 import requests
-import config
+from . import config
 
 # ─────────────────────────────────────────────
 # CONFIGURATION

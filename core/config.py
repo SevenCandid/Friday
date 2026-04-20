@@ -1,7 +1,9 @@
 import json
 import os
 
-CONFIG_FILE = "config.json"
+# Config file should be in the root directory
+_ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+CONFIG_FILE = os.path.join(_ROOT_DIR, "config.json")
 
 _default_config = {
     "ai": {
@@ -55,4 +57,7 @@ load_config()
 
 def get(section: str, key: str):
     """Retrieves a configuration value safely."""
-    return _config.get(section, {}).get(key, _default_config[section][key])
+    try:
+        return _config.get(section, {}).get(key, _default_config[section][key])
+    except:
+        return _default_config[section][key]

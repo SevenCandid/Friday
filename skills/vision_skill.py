@@ -1,4 +1,4 @@
-import observer
+from core import observer
 
 def handle(command, speak):
     # Detect vision-related keywords

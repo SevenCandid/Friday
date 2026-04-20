@@ -14,5 +14,13 @@
         "message": "",
         "active": false,
         "last_triggered": "2026-04-18"
+    },
+    {
+        "id": 1776695192,
+        "time": "14:27",
+        "type": "once",
+        "message": "",
+        "active": false,
+        "last_triggered": "2026-04-20"
     }
 ]

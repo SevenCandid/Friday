@@ -1,8 +1,8 @@
 import difflib
-import skill_manager
-import memory_manager
-import state_manager
-import ai_layer
+from . import skill_manager
+from . import memory_manager
+from . import state_manager
+from . import ai_layer
 
 # Intent Definitions (Clusters of related words)
 INTENT_MAP = {
@@ -82,10 +82,19 @@ def process(command, response_callback):
             state_manager.pending_action = None
             state_manager.pending_action_text = None
             
-            # SAFETY CHECK: Only call if it's a function
+            print(f"[Brain] Attempting to execute pending action: {action} (Type: {type(action)})")
+            
+            # SAFETY CHECK: Only call if it's actually a function/lambda
             if callable(action):
-                result = action()
-                response_callback(result)
+                try:
+                    result = action()
+                    if result:
+                        response_callback(result)
+                except Exception as e:
+                    print(f"[Brain Error] Failed to execute pending action: {e}")
+                    response_callback("I encountered an error while trying to perform that action.")
+            else:
+                print(f"[Brain Error] Pending action was not callable! Value: {action}")
             return True
         elif any(w in cmd for w in ["no", "nope", "nah", "stop", "cancel"]):
             state_manager.pending_action = None

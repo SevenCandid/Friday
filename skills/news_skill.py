@@ -2,7 +2,7 @@ import re
 import threading
 import html
 import feedparser
-import ai_layer
+from core import ai_layer
 
 # ─────────────────────────────────────────────
 # NEWS SOURCES
@@ -225,7 +225,7 @@ def handle(command, speak):
             gui_lines.append(f"{i}. {item['title']}")
             gui_lines.append(f"   — {item['summary']}\n")
 
-        import state_manager
+        from core import state_manager
         state_manager.add_to_chat("Friday", "\n".join(gui_lines))
 
         # ── Voice Delivery (natural, spoken) ───────────────────────

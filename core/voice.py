@@ -1,10 +1,8 @@
 import os
 import sys
-from path_helper import get_resource_path
+from .path_helper import get_resource_path
 
 # --- WINDOWS DLL REPAIR ---
-# faster-whisper/ctranslate2 often fails to find its DLLs on Windows.
-# This block manually adds the site-packages path to the DLL search path.
 if sys.platform == "win32":
     import site
     packages_paths = site.getsitepackages()
@@ -23,8 +21,8 @@ import collections
 import time
 import numpy as np
 import pyaudio
-import state_manager
-import webrtcvad # Requires: pip install webrtcvad
+from . import state_manager
+import webrtcvad 
 from vosk import Model, KaldiRecognizer
 from faster_whisper import WhisperModel
 
@@ -180,12 +178,8 @@ def listen(listen_timeout=5, phrase_time_limit=5):
             _audio_buffer.append(clean_data)
 
             # --- IMPROVED WAKE WORD DETECTION ---
-            # We check PartialResult but we DON'T return immediately if there's more speech
             partial_data = json.loads(recognizer.PartialResult())
             partial_text = partial_data.get("partial", "").lower()
-            
-            # If we hear 'friday', we keep listening for the rest of the command
-            # until AcceptWaveform is true.
             
             if recognizer.AcceptWaveform(clean_data):
                 result = json.loads(recognizer.Result())
@@ -194,13 +188,11 @@ def listen(listen_timeout=5, phrase_time_limit=5):
                 if not vosk_text:
                     continue
 
-                # If the user just said "friday", or "friday [command]"
                 if "friday" in vosk_text or "friday" in partial_text:
-                    # Clean the wake word from the command if present
                     cmd = vosk_text.replace("friday", "").strip()
                     if not cmd:
-                        return "friday" # Just the wake word
-                    return cmd # The actual command!
+                        return "friday" 
+                    return cmd 
                 
                 # Fallback for other power keywords
                 power_keywords = ["open", "launch", "time", "date", "alarm", "stop", "cancel", "battery"]
@@ -210,7 +202,7 @@ def listen(listen_timeout=5, phrase_time_limit=5):
                     whisper_text = _get_whisper_transcription(list(_audio_buffer))
                     if whisper_text and len(whisper_text.split()) >= 1:
                         return whisper_text
-                    return None # Discard garbage transcription
+                    return None 
                     
         except Exception as e:
             print(f"[Voice Error] {e}")

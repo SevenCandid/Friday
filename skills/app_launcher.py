@@ -3,7 +3,8 @@ import threading
 import time
 import difflib
 from pathlib import Path
-import state_manager
+from core import state_manager
+from core import memory_manager
 
 # Internal index of apps
 _app_index = {}
@@ -55,7 +56,6 @@ def _background_refresher():
 threading.Thread(target=_background_refresher, daemon=True).start()
 
 def handle(command, speak):
-    import memory_manager
     
     # 1. Handle "How many apps"
     if "how many" in command and ("app" in command or "program" in command):
@@ -75,7 +75,6 @@ def handle(command, speak):
         speak(f"I have indexed {count} applications. Displaying them in your tactical HUD now.")
         
         # We push the long list directly to the chat without speaking it (to avoid noise)
-        import state_manager
         state_manager.add_to_chat("Friday", f"--- INDEXED APPLICATIONS ({count}) ---\n{app_list_str}")
         return True
 
@@ -113,11 +112,12 @@ def handle(command, speak):
         return True
 
     # 3. Exact match wins immediately — no need to ask
+    usage_data = memory_manager.get_memory("app_usage") or {}
+
     if target_app in candidates:
         best_match = target_app
     else:
         # Use Memory to rank, then prefer shorter names (more specific)
-        usage_data = memory_manager.get_memory("app_usage") or {}
         candidates.sort(key=lambda x: (-usage_data.get(x, 0), len(x)))
 
         # 4. If still ambiguous after ranking, ask — but only between top 2

@@ -2,7 +2,6 @@ import os
 from pathlib import Path
 
 # --- Windows Folder Shortcuts ---
-# Path.home() securely gets the C:\Users\<Username> directory
 HOME_DIR = Path.home()
 
 SHORTCUTS = {

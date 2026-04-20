@@ -12,7 +12,9 @@ def load_skills():
     global _skills
     _skills = []
     
-    skills_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "skills")
+    # Path to the root skills directory
+    _ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    skills_dir = os.path.join(_ROOT_DIR, "skills")
     
     if not os.path.exists(skills_dir):
         print(f"[Skill Manager] Creating skills directory at {skills_dir}")

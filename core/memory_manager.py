@@ -4,7 +4,8 @@ import collections
 from pathlib import Path
 
 # Paths
-MEMORY_FILE = "memory.json"
+_ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+MEMORY_FILE = os.path.join(_ROOT_DIR, "memory.json")
 
 # Internal memory state
 # Long-term: Persisted to JSON

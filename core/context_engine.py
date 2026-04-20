@@ -2,8 +2,8 @@ import time
 import os
 import threading
 import psutil
-import observer
-import state_manager
+from . import observer
+from . import state_manager
 
 # Cooldowns to prevent annoyance (5 minutes)
 COOLDOWN = 300
@@ -11,7 +11,6 @@ _last_triggers = {}
 
 def _execute_open_projects():
     """Example action: Open the user's coding folder."""
-    # You can customize this path!
     project_path = os.path.expanduser("~/Documents")
     os.startfile(project_path)
     return "Opening your project folder now."
@@ -37,7 +36,6 @@ def _monitor_context(speak):
             elif "chrome" in active_app or "edge" in active_app:
                 if cpu > 80 and (current_time - _last_triggers.get("heavy_browser", 0) > COOLDOWN):
                     speak("Your system is under heavy load while browsing. Should I help you close some background tasks?")
-                    # Action could be a cleanup script
                     _last_triggers["heavy_browser"] = current_time
 
             # 3. LOW BATTERY + HEAVY APP

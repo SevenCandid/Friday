@@ -2,7 +2,7 @@ import threading
 import wikipedia
 from duckduckgo_search import DDGS
 from skills import news_skill
-import ai_layer
+from core import ai_layer
 
 # Common Acronym Mapping for Disambiguation
 KNOWLEDGE_MAP = {
@@ -91,7 +91,7 @@ def handle(command, speak):
     
     if is_knowledge and query:
         def _knowledge_thread():
-            import state_manager
+            from core import state_manager
             result = _academic_search(query, speak)
             if result:
                 speak(result)

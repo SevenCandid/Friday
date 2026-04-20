@@ -1,12 +1,11 @@
 import os
 import subprocess
-from speech import speak
-from voice import listen
+from .speech import speak
+from .voice import listen
 
 def open_chrome():
     """Opens Google Chrome."""
     try:
-        # On Windows, 'start chrome' uses the system's registered application path
         os.system("start chrome")
         return True
     except Exception as e:
@@ -16,7 +15,6 @@ def open_chrome():
 def open_vscode():
     """Opens Visual Studio Code."""
     try:
-        # 'code' is the global command for VS Code
         os.system("start code")
         return True
     except Exception as e:
@@ -35,7 +33,6 @@ def open_clock():
 def open_file_explorer():
     """Opens the Windows File Explorer."""
     try:
-        # Subprocess is fast and clean for launching system executables
         subprocess.Popen("explorer.exe")
         return True
     except Exception as e:
@@ -45,7 +42,6 @@ def open_file_explorer():
 def lock_pc():
     """Locks the Windows PC."""
     try:
-        # The standard Windows DLL call to lock the workstation
         os.system("rundll32.exe user32.dll,LockWorkStation")
         return True
     except Exception as e:
@@ -54,16 +50,22 @@ def lock_pc():
 
 def shutdown_pc():
     """Sets a pending action to shut down the PC."""
-    import state_manager
-    state_manager.pending_action = lambda: os.system("shutdown /s /t 1")
+    from . import state_manager
+    def _execute():
+        speak("Goodbye.")
+        os.system("shutdown /s /t 1")
+    state_manager.pending_action = _execute
     state_manager.pending_action_text = "shutdown the computer"
     speak("Are you sure you want to shut down the computer?")
     return True
 
 def restart_pc():
     """Sets a pending action to restart the PC."""
-    import state_manager
-    state_manager.pending_action = lambda: os.system("shutdown /r /t 1")
+    from . import state_manager
+    def _execute():
+        speak("See you in a moment.")
+        os.system("shutdown /r /t 1")
+    state_manager.pending_action = _execute
     state_manager.pending_action_text = "restart the computer"
     speak("Are you sure you want to restart the computer?")
     return True

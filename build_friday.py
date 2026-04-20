@@ -31,9 +31,9 @@ def build():
         '--additional-hooks-dir=hooks', # Use our fixed hooks to prevent crashes
         
         # Add Data Folders
+        '--add-data=core;core',
         '--add-data=skills;skills',
         '--add-data=vosk-model-small-en-us-0.15;vosk-model-small-en-us-0.15',
-        '--add-data=personality.py;.',
         '--add-data=seven.ico;.',
         '--icon=seven.ico',
         
@@ -54,15 +54,14 @@ def build():
         '--hidden-import=wikipedia',
         '--hidden-import=requests',
         '--hidden-import=html',
-        '--hidden-import=ai_layer',
-        '--hidden-import=ltm_core',
+        '--hidden-import=core.ai_layer',
+        '--hidden-import=core.ltm_core',
         '--hidden-import=sqlite3',
         '--hidden-import=pyautogui',
         '--hidden-import=pycaw.pycaw',
-        '--hidden-import=system_control',
-        '--hidden-import=file_manager',
-        '--hidden-import=battery_manager',
-        '--hidden-import=comtypes',
+        '--hidden-import=core.system_control',
+        '--hidden-import=core.file_manager',
+        '--hidden-import=core.battery_manager',
         '--hidden-import=pystray',
         '--hidden-import=PIL.Image',
         '--hidden-import=PIL.ImageTk',

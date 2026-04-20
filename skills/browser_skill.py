@@ -3,9 +3,7 @@ import random
 import sys
 import os
 
-# Add parent dir to path so we can import system_control if needed
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import system_control
+from core import system_control
 
 def handle(command, speak):
     # Chrome logic

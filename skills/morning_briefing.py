@@ -2,13 +2,10 @@ import psutil
 import threading
 import datetime
 import requests
-import alarm_manager
-import state_manager
+from core import alarm_manager
+from core import state_manager
+from core import config
 from skills import news_skill
-import sys
-import os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import config
 
 
 # ─────────────────────────────────────────────

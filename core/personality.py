@@ -1,6 +1,10 @@
 import random
 
-ASSISTANT_NAME = "Friday"
+ASSISTANT_NAME = "SEVEN"
+CREATOR_NAME = "Frank Bediako"
+CREATOR_ALIAS = "SEVEN"
+CREATOR_LOCATION = "Ghana"
+CREATOR_BIO = "A talented Ghanaian developer who designed me to be the ultimate tactical AI assistant."
 
 _responses = {
     "wake": [

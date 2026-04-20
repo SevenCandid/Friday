@@ -3,8 +3,7 @@ import os
 import random
 import psutil
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import system_control
+from core import system_control
 
 def handle(command, speak):
     # App Launching
@@ -32,18 +31,12 @@ def handle(command, speak):
             return True
 
     # Power Controls
-    if "shutdown" in command or "shut down" in command or "turn off" in command:
-        if system_control.shutdown_pc():
-            speak("Goodbye.")
-        else:
-            speak("Okay, I will keep the computer running.")
+    if ("shutdown" in command or "shut down" in command or "turn off" in command) and ("computer" in command or "pc" in command):
+        system_control.shutdown_pc()
         return True
         
-    if "restart" in command:
-        if system_control.restart_pc():
-            speak("See you in a moment.")
-        else:
-            speak("Restart cancelled.")
+    if "restart" in command and ("computer" in command or "pc" in command):
+        system_control.restart_pc()
         return True
         
     if "lock" in command and ("computer" in command or "pc" in command or "screen" in command):

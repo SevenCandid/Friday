@@ -1,4 +1,4 @@
-from path_helper import get_project_root
+from .path_helper import get_project_root
 import os
 import sqlite3
 import datetime

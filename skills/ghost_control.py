@@ -1,7 +1,7 @@
 import pyautogui
 import time
 import os
-import state_manager
+from core import state_manager
 
 # Safety setting: Move mouse to corner to abort
 pyautogui.FAILSAFE = True

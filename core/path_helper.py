@@ -10,7 +10,8 @@ def get_resource_path(relative_path):
         # PyInstaller creates a temp folder and stores path in _MEIPASS
         base_path = sys._MEIPASS
     except Exception:
-        base_path = os.path.abspath(".")
+        # In dev, root is one level up from /core
+        base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
     return os.path.join(base_path, relative_path)
 
@@ -20,5 +21,5 @@ def get_project_root():
         # Running as compiled .exe
         return os.path.dirname(sys.executable)
     else:
-        # Running as standard script
-        return os.path.dirname(os.path.abspath(__file__))
+        # Running as standard script - root is one level up from /core
+        return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

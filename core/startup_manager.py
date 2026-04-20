@@ -1,6 +1,6 @@
 import os
 import sys
-import config
+from . import config
 
 def manage_startup():
     """Manages the Windows startup shortcut based on config settings."""
@@ -23,13 +23,9 @@ def manage_startup():
                 if getattr(sys, 'frozen', False):
                     target = sys.executable
                 else:
-                    # When running as a script, we point to the current python file
-                    # but we also need the python interpreter.
-                    # For simplicity in V1, we mainly target the .exe deployment.
                     target = os.path.abspath(sys.argv[0])
 
                 # Create a .bat file to launch Friday
-                # We use 'start' to ensure it detaches correctly
                 with open(batch_path, 'w', encoding="utf-8") as f:
                     f.write(f'@echo off\n')
                     f.write(f'start "" "{target}"\n')
@@ -44,7 +40,3 @@ def manage_startup():
                 print(f"[Startup] Disabled auto-start.")
             except Exception as e:
                 print(f"[Startup Error] Failed to remove auto-start link: {e}")
-
-if __name__ == "__main__":
-    # Test it
-    manage_startup()

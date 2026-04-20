@@ -8,27 +8,27 @@ import difflib
 import threading
 import sys
 
-# Initialize the persistent file logger only in the main process
-import logger
+# Initialize the persistent file logger from the core package
+from core import logger
 if multiprocessing.current_process().name == 'MainProcess':
     logger.init_logger()
 
-import sentinel
-import context_engine
-import audio_manager
-from voice import listen
-import speech
-import alarm_manager
-import memory_manager
-import battery_manager
-import gui_manager
-import state_manager
-import skill_manager
-import brain
-import startup_manager
-import observer
-import web_bridge
-from personality import get_response
+from core import sentinel
+from core import context_engine
+from core import audio_manager
+from core.voice import listen
+from core import speech
+from core import alarm_manager
+from core import memory_manager
+from core import battery_manager
+from core import gui_manager
+from core import state_manager
+from core import skill_manager
+from core import brain
+from core import startup_manager
+from core import observer
+from core import web_bridge
+from core.personality import get_response
 
 def is_wake_word(text: str) -> bool:
     """
@@ -39,19 +39,19 @@ def is_wake_word(text: str) -> bool:
         
     text = text.lower().strip()
     
-    aliases = ["friday", "fryday", "friyday", "fry day", "hey friday", "hello friday", "hi friday", "okay friday", "hey", "hello", "hi"]
+    aliases = ["seven", "hey seven", "hello seven", "hi seven", "okay seven", "hey", "hello", "hi", "heaven", "evan", "sven"]
     if any(alias in text for alias in aliases):
         return True
         
     words = text.split()
     for word in words:
-        if word.startswith("fri") or word.startswith("fry") or word.startswith("fra") or difflib.get_close_matches(word, ["friday"], n=1, cutoff=0.6):
+        if word.startswith("sev") or word.startswith("sen") or difflib.get_close_matches(word, ["seven"], n=1, cutoff=0.6):
             return True
             
     return False
 
 def run_assistant():
-    print("\nFriday is online and always listening...")
+    print("\nSEVEN is online and always listening...")
     state_manager.set_status("Wake word active")
     
     # Load Memory
@@ -99,7 +99,7 @@ def run_assistant():
             
             # Remove the wake word and punctuation
             clean_command = input_text.lower()
-            for wake in ["hey friday", "hello friday", "okay friday", "friday"]:
+            for wake in ["hey seven", "hello seven", "okay seven", "seven"]:
                 if wake in clean_command:
                     clean_command = clean_command.replace(wake, "", 1)
             

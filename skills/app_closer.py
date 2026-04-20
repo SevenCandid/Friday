@@ -123,6 +123,26 @@ def handle(command, speak):
 
     target = parts[1].strip()
 
+    # --- CONTEXTUAL 'THIS' LOGIC ---
+    if target == "this" or not target:
+        from core import state_manager
+        active_title = state_manager.active_window.lower()
+        
+        # Try to find a match for the active window title in our aliases
+        matched_alias = None
+        for alias, exe in PROCESS_ALIASES.items():
+            if alias in active_title:
+                matched_alias = alias
+                break
+        
+        if matched_alias:
+            target = matched_alias
+        else:
+            # If no alias match, try to use the first word of the window title
+            # (e.g. "Notepad - file.txt" -> "Notepad")
+            target = active_title.split("-")[-1].strip() if "-" in active_title else active_title.split()[0]
+            print(f"[App Closer] No alias for '{active_title}', trying generic: '{target}'")
+
     # Filter out generic filler words that aren't app names
     filler = ["the", "app", "application", "program", "window", "it", "that"]
     for word in filler:

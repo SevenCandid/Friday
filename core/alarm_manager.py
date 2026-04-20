@@ -5,9 +5,9 @@ import winsound
 import json
 import os
 import re
-import state_manager
-import utils
-from speech import speak
+from . import state_manager
+from . import utils
+from .speech import speak
 
 ALARM_FILE = utils.get_data_path("alarms.json")
 
@@ -43,7 +43,6 @@ def parse_time_string(time_string: str):
     """
     Parses a conversational time string.
     Returns (datetime_obj, type_str)
-    Types: once, daily, weekdays, monday, tuesday, etc.
     """
     time_string = time_string.lower().strip()
     now = datetime.datetime.now()
@@ -127,14 +126,12 @@ def list_alarms() -> str:
     resp = "You have the following alarms: "
     items = []
     for a in active:
-        # Convert HH:MM back to friendly
         t = datetime.datetime.strptime(a["time"], "%H:%M")
         f_t = t.strftime("%I:%M %p").lstrip("0")
         items.append(f"{f_t} ({a['type']})")
     return resp + ", ".join(items)
 
 def get_active_alarms():
-    """Returns a list of all currently active alarm objects."""
     return [a for a in _alarms if a.get("active", False)]
 
 def disable_all_alarms() -> str:
@@ -174,11 +171,7 @@ def stop_alarm() -> str:
 def snooze_alarm(duration_mins: int = 5) -> str:
     global _alarm_state, _current_ringing_alarm
     if _alarm_state == "RINGING" and _current_ringing_alarm:
-        # Reset state to IDLE immediately so the background thread 
-        # continues to check for new/snoozed alarms.
         _alarm_state = "IDLE"
-        
-        # Create a temporary one-time alarm for the snooze
         snooze_time = datetime.datetime.now() + datetime.timedelta(minutes=duration_mins)
         new_alarm = {
             "id": int(time.time()),
@@ -199,7 +192,6 @@ def _ringing_behavior(alarm_msg: str):
     cycle = 0
     while _alarm_state == "RINGING":
         try:
-            # Escalating Intensity
             frequency = min(1000 + (cycle * 200), 3000)
             beeps = min(2 + cycle, 5)
             
@@ -226,8 +218,8 @@ def _check_alarms_loop():
                 now = datetime.datetime.now()
                 time_now = now.strftime("%H:%M")
                 date_now = now.strftime("%Y-%m-%d")
-                day_now = now.strftime("%A").lower()
                 is_weekday = now.weekday() < 5
+                day_now = now.strftime("%A").lower()
                 
                 for a in _alarms:
                     if a["active"] and a["time"] == time_now and a["last_triggered"] != date_now:

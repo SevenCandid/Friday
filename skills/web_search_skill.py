@@ -1,8 +1,12 @@
 import threading
-import ai_layer
-import state_manager
+from core import ai_layer
+from core import state_manager
 
 def handle(command, speak):
+    """
+    Analyzes the user's command for live search intent.
+    If triggered, it fetches real-time data from the web and provides a summarized answer.
+    """
     # 1. Identify Search Intent (Only for LIVE data)
     search_keywords = [
         "search", "research", "price", "stock", "score", "how many", "look up",

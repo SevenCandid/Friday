@@ -2,9 +2,7 @@ import sys
 import os
 import re
 
-# Add parent dir to path for imports
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import alarm_manager
+from core import alarm_manager
 
 def handle(command, speak):
     # 1. Stop / Silence Alarm
