@@ -1,3 +1,8 @@
+"""
+Volume Control Skill for SEVEN.
+Provides hardware-level audio management including volume adjustment, muting, 
+and relative sound control (louder/quieter) using the PyCaw library.
+"""
 import re
 from ctypes import cast, POINTER
 from comtypes import CLSCTX_ALL
@@ -10,22 +15,28 @@ def _get_volume_control():
         
         # Method A: Try standard Activate (on raw COM objects)
         if hasattr(devices, 'Activate'):
-            interface = devices.Activate(IAudioEndpointVolume._iid_, CLSCTX_ALL, None)
+            interface = devices.Activate(IAudioEndpointVolume._iid_, CLSCTX_ALL, None) # pylint: disable=protected-access
         # Method B: Try accessing the internal device if it's a wrapper
-        elif hasattr(devices, '_device') and hasattr(devices._device, 'Activate'):
-            interface = devices._device.Activate(IAudioEndpointVolume._iid_, CLSCTX_ALL, None)
         else:
-            # Method C: Use the lowest-level enumerator as absolute fallback
-            enumerator = AudioUtilities.GetDeviceEnumerator()
-            device = enumerator.GetDefaultAudioEndpoint(0, 1)
-            interface = device.Activate(IAudioEndpointVolume._iid_, CLSCTX_ALL, None)
+            internal_device = getattr(devices, '_device', None)
+            if internal_device and hasattr(internal_device, 'Activate'):
+                interface = internal_device.Activate(IAudioEndpointVolume._iid_, CLSCTX_ALL, None) # pylint: disable=protected-access
+            else:
+                # Method C: Use the lowest-level enumerator as absolute fallback
+                enumerator = AudioUtilities.GetDeviceEnumerator()
+                device = enumerator.GetDefaultAudioEndpoint(0, 1)
+                interface = device.Activate(IAudioEndpointVolume._iid_, CLSCTX_ALL, None) # pylint: disable=protected-access
             
         return cast(interface, POINTER(IAudioEndpointVolume))
-    except Exception as e:
+    except Exception as e: # pylint: disable=broad-except
         print(f"[Volume Error] All access methods failed: {e}")
         return None
 
 def handle(command, speak):
+    """
+    Processes volume-related voice commands.
+    Supports setting absolute levels, muting, and relative adjustments.
+    """
     # Expanded keyword detection for more natural phrasing
     audio_keywords = ["volume", "mute", "sound", "audio", "louder", "quieter"]
     if not any(kw in command for kw in audio_keywords):
