@@ -31,7 +31,10 @@ def handle(command, speak):
             return True
 
     # Power Controls
-    if ("shutdown" in command or "shut down" in command or "turn off" in command) and ("computer" in command or "pc" in command):
+    power_off_triggers = ["shutdown", "shut down", "turn off", "turn of", "power off"]
+    device_triggers = ["computer", "pc", "system"]
+    
+    if any(trigger in command for trigger in power_off_triggers) and any(device in command for device in device_triggers):
         system_control.shutdown_pc()
         return True
         

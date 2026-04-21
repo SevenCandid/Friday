@@ -198,7 +198,7 @@ def handle(command, speak):
         return True
 
     # Skip AI fallback for system and location commands
-    system_keywords = ["restart", "shutdown", "shut down", "turn off", "power", "log off"]
+    system_keywords = ["restart", "shutdown", "shut down", "turn off", "turn of", "power off", "log off"]
     location_keywords = ["location", "where am i", "where are we"]
     search_keywords = ["price", "who is", "what is", "where is", "how many", "score", "weather", "latest"]
     if any(kw in command for kw in search_keywords + system_keywords + location_keywords):
